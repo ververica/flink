@@ -15,29 +15,22 @@
 # specific language governing permissions and limitations
 # under the License.
 #
+---
 name: Tests
-on: [push, pull_request]
+on:  [push, pull_request]
 permissions:
   # All other permissions are set to none
   contents: read
 env:
   GITHUB_REPOSITORY: ${{ github.repository }}
   GITHUB_USERNAME: ${{ github.actor }}
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 jobs:
-  compile_ci:
-    runs-on: >-
-      ${{ (
-        (
-          github.event_name == 'push' ||
-          github.event_name == 'schedule' ||
-          contains(fromJSON('[
-            "autophagy",
-            "XComp",
-            "MartijnVisser",
-            "nicoweidner"
-          ]'), github.event.pull_request.user.login)
-        ) && github.repository == 'ververica/flink'
-      ) && 'self-hosted' || 'ubuntu-20.04' }}
+  build-info:
+    name: "Compile CI"
+    runs-on: ubuntu-latest
     steps:
       - run: echo "🎉 The job was automatically triggered by a ${{ github.event_name }} event."
       - run: echo "🐧 This job is now running on a ${{ runner.os }} on ${{ jobs.compile_ci.runs-on }}"
@@ -74,7 +67,19 @@ jobs:
       - run: echo "🍏 This job's status is ${{ job.status }}."
 
   e2e_ci:
-    runs-on: self-hosted
+    runs-on: >-
+      ${{ (
+        (
+          github.event_name == 'push' ||
+          github.event_name == 'schedule' ||
+          contains(fromJSON('[
+            "autophagy",
+            "nicoweidner",
+            "XComp",
+            "MartijnVisser"
+          ]'), github.event.pull_request.user.login)
+        ) && github.repository == 'ververica/flink'
+      ) && 'self-hosted' || 'ubuntu-20.04' }}
     steps:
       - run: echo "🎉 The job was automatically triggered by a ${{ github.event_name }} event."
       - run: echo "🐧 This job is now running on a ${{ runner.os }}"
