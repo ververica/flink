@@ -55,6 +55,11 @@ jobs:
   test_ci_core:
     needs: compile_ci
     runs-on: self-hosted
+    env:
+      MVN_COMMON_OPTIONS: -Dflink.forkCount=2 -Dflink.forkCountTestPackage=2 -Dfast -Pskip-webui-build
+      MVN_TEST_OPTIONS: -Dflink.tests.with-openssl -Dflink.tests.check-segment-multiple-free
+      PROFILE: -Dhadoop.version=2.8.3 -Dinclude_hadoop_aws -Dscala-2.12
+      MVN_TEST_MODULES: flink-annotations,flink-test-utils-parent/flink-test-utils,flink-state-backends/flink-statebackend-rocksdb,flink-clients,flink-core,flink-java,flink-optimizer,flink-rpc,flink-rpc/flink-rpc-core,flink-rpc/flink-rpc-akka,flink-runtime,flink-runtime-web,flink-scala,flink-streaming-java,flink-streaming-scala,flink-metrics,flink-metrics/flink-metrics-core,flink-external-resources,flink-external-resources/flink-external-resource-gpu
     steps:
       - run: echo "🎉 The job was automatically triggered by a ${{ github.event_name }} event."
       - run: echo "🔎 The name of your branch is ${{ github.ref }} and your repository is ${{ github.repository }}."
@@ -87,9 +92,4 @@ jobs:
           path: ${{ github.workspace }}/build-target
 
       - name: Test - core
-        env:
-          MVN_COMMON_OPTIONS: -Dflink.forkCount=2 -Dflink.forkCountTestPackage=2 -Dfast -Pskip-webui-build
-          MVN_TEST_OPTIONS: -Dflink.tests.with-openssl -Dflink.tests.check-segment-multiple-free
-          PROFILE: -Dhadoop.version=2.8.3 -Dinclude_hadoop_aws -Dscala-2.12
-          MVN_TEST_MODULES: flink-annotations,flink-test-utils-parent/flink-test-utils,flink-state-backends/flink-statebackend-rocksdb,flink-clients,flink-core,flink-java,flink-optimizer,flink-rpc,flink-rpc/flink-rpc-core,flink-rpc/flink-rpc-akka,flink-runtime,flink-runtime-web,flink-scala,flink-streaming-java,flink-streaming-scala,flink-metrics,flink-metrics/flink-metrics-core,flink-external-resources,flink-external-resources/flink-external-resource-gpu
-        run: mvn ${{ MVN_COMMON_OPTIONS }} ${{ MVN_TEST_OPTIONS }} ${{ PROFILE }} -pl ${{ MVN_TEST_MODULES }} -am verify
+        run: mvn ${{ env.MVN_COMMON_OPTIONS }} ${{ env.MVN_TEST_OPTIONS }} ${{ env.PROFILE }} -pl ${{ env.MVN_TEST_MODULES }} -am verify
