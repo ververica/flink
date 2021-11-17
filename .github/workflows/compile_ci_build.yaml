@@ -5,7 +5,6 @@ jobs:
     runs-on: self-hosted
     steps:
       - run: echo "🎉 The job was automatically triggered by a ${{ github.event_name }} event."
-      - run: echo "🐧 This job is now running on a ${{ runner.os }}"
       - run: echo "🔎 The name of your branch is ${{ github.ref }} and your repository is ${{ github.repository }}."
       - name: Check out repository code
         uses: actions/checkout@v2
@@ -32,17 +31,23 @@ jobs:
       - name: Compiling Flink
         run: mvn -Dmaven.wagon.http.pool=false -Dorg.slf4j.simpleLogger.showDateTime=true -Dorg.slf4j.simpleLogger.dateTimeFormat=HH:mm:ss.SSS -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn --no-snapshot-updates -B -Dhadoop.version=2.8.3 -Dinclude_hadoop_aws -Dscala-2.12  --settings ${{ github.workspace }}/tools/ci/google-mirror-settings.xml  clean deploy -DaltDeploymentRepository=validation_repository::default::file:/tmp/flink-validation-deployment -Dflink.convergence.phase=install -Pcheck-convergence -Dflink.forkCount=2 -Dflink.forkCountTestPackage=2 -Dmaven.javadoc.skip=true -U -DskipTests
 
+      - name: Upload compiled Flink
+        uses: actions/upload-artifact@v2
+        with:
+          name: build-target
+          path: ${{ github.workspace }}/build-target # or path/to/artifact
+
       - run: echo "🖥️ The workflow is now ready to test your code on the runner."
       - name: List files in the repository
         run: |
           ls ${{ github.workspace }}
       - run: echo "🍏 This job's status is ${{ job.status }}."
 
-  e2e_ci:
+  test_ci_core:
+    needs: compile_ci
     runs-on: self-hosted
     steps:
       - run: echo "🎉 The job was automatically triggered by a ${{ github.event_name }} event."
-      - run: echo "🐧 This job is now running on a ${{ runner.os }}"
       - run: echo "🔎 The name of your branch is ${{ github.ref }} and your repository is ${{ github.repository }}."
       - name: Check out repository code
         uses: actions/checkout@v2
@@ -66,11 +71,14 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-maven-
 
-      - name: Build Flink
-        run: mvn -Dmaven.wagon.http.pool=false -Dorg.slf4j.simpleLogger.showDateTime=true -Dorg.slf4j.simpleLogger.dateTimeFormat=HH:mm:ss.SSS -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn --no-snapshot-updates -B -Dhadoop.version=2.8.3 -Dinclude_hadoop_aws -Dscala-2.12 -Dfast -Pskip-webui-build  --settings ${{ github.workspace }}/tools/ci/google-mirror-settings.xml  -version
+      - name: Download Flink build-target
+        uses: actions/download-artifact@v2
+        with:
+          name: build-target
+          path: ${{ github.workspace }}/build-target
 
-      - name: Run e2e tests
-        run: PROFILE="-Dhadoop.version=2.8.3 -Dinclude_hadoop_aws -Dscala-2.12" FLINK_DIR=`pwd`/build-target ./tools/azure-pipelines/uploading_watchdog.sh flink-end-to-end-tests/run-nightly-tests.sh e2e
+      - name: Test - core
+        run: mvn -Dflink.forkCount=2 -Dflink.forkCountTestPackage=2 -Dfast -Pskip-webui-build -Dflink.tests.with-openssl -Dflink.tests.check-segment-multiple-free -Dhadoop.version=2.8.3 -Dinclude_hadoop_aws -Dscala-2.12 flink-annotations,flink-test-utils-parent/flink-test-utils,flink-state-backends/flink-statebackend-rocksdb,flink-clients,flink-core,flink-java,flink-optimizer,flink-rpc,flink-rpc/flink-rpc-core,flink-rpc/flink-rpc-akka,flink-runtime,flink-runtime-web,flink-scala,flink-streaming-java,flink-streaming-scala,flink-metrics,flink-metrics/flink-metrics-core,flink-external-resources,flink-external-resources/flink-external-resource-gpu verify
 
       - run: echo "🖥️ The workflow is now ready to test your code on the runner."
       - name: List files in the repository
