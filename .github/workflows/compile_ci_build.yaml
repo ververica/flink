@@ -38,7 +38,7 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: build-target
-          path: ${{ github.workspace }}/flink-dist/target/flink*-bin/flink*
+          path: ${{ github.workspace }}
           retention-days: 1
 
   test_ci_core:
@@ -69,7 +69,7 @@ jobs:
         uses: actions/download-artifact@v2
         with:
           name: build-target
-          path: ${{ github.workspace }}/build-target
+          path: ${{ github.workspace }}
 
       - name: Cache local Maven repository
         uses: actions/cache@v2
