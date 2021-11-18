@@ -41,7 +41,7 @@ jobs:
 #          retention-days: 1
 
   test_ci_core:
-    needs: compile_ci
+#    needs: compile_ci
     runs-on: self-hosted
     container: rmetzger/flink-ci
     env:
