@@ -62,7 +62,7 @@ jobs:
       - name: "Checks out Flink"
         uses: actions/checkout@v2
         with:
-          path: ${{ github.workspace }}/flink-checkout
+          path: ${{ env.CHECKOUT_DIR }}
 
       - name: "Set up Maven" # and SSL???
         uses: stCarolas/setup-maven@v4.2
@@ -93,14 +93,14 @@ jobs:
           java-version: ${{ inputs.jdk }}
 
       - name: "Compile Flink"
-        working-directory: ${{ github.workspace }}/flink-checkout
+        working-directory: ${{ env.CHECKOUT_DIR }}
         env:
           MAVEN_OPTS: " -Dmaven.repo.local=${{ env.MAVEN_REPOSITORY_DIR }}"
         run: |
           ${{ inputs.environment }} ./tools/ci/compile.sh || exit $?
 
       - name: "Collect build artifacts"
-        working-directory: ${{ github.workspace }}/flink-checkout
+        working-directory: ${{ env.CHECKOUT_DIR }}
         run: ./tools/azure-pipelines/create_build_artifact.sh -f ${{ env.FLINK_ARTIFACT_DIR }}
 
       # upload artifacts for next stage
@@ -154,7 +154,7 @@ jobs:
           path: ${{ env.FLINK_ARTIFACT_DIR }}
 
       - name: "Unpack Build artifact"
-        working-directory: ${{ github.workspace }}/flink-checkout
+        working-directory: ${{ env.CHECKOUT_DIR }}
         run: ./tools/azure-pipelines/unpack_build_artifact.sh -f ${{ env.FLINK_ARTIFACT_DIR }}
 
       - name: "Cache Maven local repo"
@@ -176,16 +176,16 @@ jobs:
 
       - name: "Load Docker images if not present in cache, yet"
         if: ${{ !cancelled() && !steps.docker-cache.cache.hit }}
-        working-directory: ${{ github.workspace }}/flink-checkout
+        working-directory: ${{ env.CHECKOUT_DIR }}
         run: ./tools/azure-pipelines/cache_docker_images.sh -f ${{ env.DOCKER_IMAGES_CACHE_FOLDER }} load
 
       - name: "Set coredump pattern"
-        working-directory: ${{ github.workspace }}/flink-checkout
+        working-directory: ${{ env.CHECKOUT_DIR }}
         run: sudo sysctl -w kernel.core_pattern=core.%p
 
       - name: "Test - ${{ matrix.module }}"
         id: test-run
-        working-directory: ${{ github.workspace }}/flink-checkout
+        working-directory: ${{ env.CHECKOUT_DIR }}
         env:
           MAVEN_OPTS: " -Dmaven.repo.local=${{ env.MAVEN_REPOSITORY_DIR }}"
           IT_CASE_S3_BUCKET: ${{ secrets.s3_bucket }}
@@ -215,6 +215,6 @@ jobs:
           path: ${{ steps.test-run.outputs.debug-files-output-dir }}
 
       - name: "Save Docker images to cache"
-        working-directory: ${{ github.workspace }}/flink-checkout
+        working-directory: ${{ env.CHECKOUT_DIR }}
         if: ${{ !cancelled() && (failure() || !steps.docker-cache.cache.hit) }}
         run: ./tools/azure-pipelines/cache_docker_images.sh -f ${{ env.DOCKER_IMAGES_CACHE_FOLDER }} save
