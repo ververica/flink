@@ -291,7 +291,7 @@ jobs:
         uses: actions/setup-java@v2
         with:
           distribution: "temurin"
-          java-version: ${{ inputs.jdk }
+          java-version: ${{ inputs.jdk }}
 
       - name: "Set up Maven" #and SSL??? This replaces the container from the original yml
         uses: stCarolas/setup-maven@v4.2
