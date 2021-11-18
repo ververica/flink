@@ -32,11 +32,10 @@ on:
       run_end_to_end:
         description: "If enabled, the end to end tests will be executed"
         required: false
-        type: boolean
+        default: "false"
       e2e_group:
         description: "The group of e2e tests that should run. Can be 1 or 2"
         required: false
-        type: string
 
 
 jobs:
