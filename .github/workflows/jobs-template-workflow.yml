@@ -281,7 +281,7 @@ jobs:
       # this may for example happen if a given directory is only used by a subset of tests, which are run in a different 'group'
       - name: "Create cache directories"
         run: |
-          mkdir -p ${{ env.MAVEN_CACHE_FOLDER }}
+          mkdir -p ${{ env.MAVEN_REPOSITORY_DIR }}
           mkdir -p ${{ env.E2E_CACHE_FOLDER }}
           mkdir -p ${{ env.E2E_TARBALL_CACHE }}
           mkdir -p ${{ env.DOCKER_IMAGES_CACHE_FOLDER }}
@@ -289,7 +289,7 @@ jobs:
       - name: "Cache Maven local repo"
         uses: actions/cache@v2
         with:
-          path: ${{ env.MAVEN_CACHE_FOLDER }}
+          path: ${{ env.MAVEN_REPOSITORY_DIR }}
           key: maven-${{ runner.os }}-${{ hashFiles('**/pom.xml', '!**/target/**') }}
           restoreKeys: maven-${{ runner.os }}
 
