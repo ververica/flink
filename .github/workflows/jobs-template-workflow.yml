@@ -212,7 +212,7 @@ jobs:
 
       - name: "Cleanup build artifacts"
         working-directory: ${{ env.CHECKOUT_DIR }}
-        run: find ${{ steps.test-run.outputs.debug-files-output-dir }} -name '*sys*[:<>|*?]* -exec rm {} \;
+        run: find ${{ steps.test-run.outputs.debug-files-output-dir }} -name '*sys*[:<>|*?]*' -exec rm {} \;
 
       - name: "Publish Unit Test Results"
         uses: EnricoMi/publish-unit-test-result-action@v1
