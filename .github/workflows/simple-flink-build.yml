@@ -30,9 +30,8 @@ on:
   workflow_dispatch:
     inputs:
       run_end_to_end:
-        description: "If set to 'true', the end to end tests will be executed"
+        description: "If enabled, the end to end tests will be executed"
         required: false
-#        default: "false"
         type: boolean
       e2e_group:
         description: "The group of e2e tests that should run. Can be 1 or 2"
@@ -48,8 +47,8 @@ jobs:
       environment: 'PROFILE="-Dhadoop.version=2.8.3 -Dinclude_hadoop_aws -Dscala-2.12"'
       jdk: 8
       mode: ""
-      run_end_to_end: ${{ inputs.run_end_to_end }}
-      e2e_group: ${{ inputs.e2e_group }}
+      run_end_to_end: ${{ github.event.inputs.run_end_to_end }}
+      e2e_group: ${{ github.event.inputs.e2e_group }}
     secrets:
       s3_bucket: ""
       s3_access_key: ""
