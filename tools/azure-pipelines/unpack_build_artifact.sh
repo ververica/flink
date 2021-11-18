@@ -29,12 +29,12 @@ done
 shift $((OPTIND-1))
 
 if ! [ -e $FLINK_ARTIFACT_DIR ]; then
-    echo "Cached flink dir $FLINK_ARTIFACT_DIR does not exist. Exiting build."
+    echo "Cached flink archive $FLINK_ARTIFACT_DIR does not exist. Exiting build."
     exit 1
 fi
 
-echo "Merging cache"
-cp -RT "$FLINK_ARTIFACT_DIR" "."
+echo "Extracting build artifacts"
+tar -xzf ${FLINK_ARTIFACT_DIR}
 
 echo "Adjusting timestamps"
 # adjust timestamps of proto file to avoid re-generation

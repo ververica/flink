@@ -47,7 +47,7 @@ on:
         required: true
 
 env:
-  FLINK_ARTIFACT_DIR: ${{ github.workspace }}/flink_artifacts
+  FLINK_ARTIFACT_DIR: ${{ github.workspace }}/flink_artifacts.tar.gz
   MAVEN_REPOSITORY_DIR: ${{ github.workspace }}/.m2/repository
   DOCKER_IMAGES_CACHE_FOLDER: ${{ github.workspace }}/.docker-cache
 
