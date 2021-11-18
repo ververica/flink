@@ -25,7 +25,7 @@ jobs:
       - run: echo "🖥️ This is now the contents of folder in Docker"
       - name: List files in the repository
         run: |
-          ls -l -a /home/user/flink
+          ls -l -a
 
       - name: Compiling Flink
         # Normal run
