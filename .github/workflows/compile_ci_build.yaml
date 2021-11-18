@@ -32,7 +32,7 @@ jobs:
       - run: echo "🖥️ The workflow is now ready to test your code on the runner."
       - name: List files in the repository
         run: |
-          ls ${{ github.workspace }}
+          ls -l -a
 
       - name: Upload compiled Flink
         uses: actions/upload-artifact@v2
