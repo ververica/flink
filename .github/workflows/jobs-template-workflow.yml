@@ -42,7 +42,7 @@ on:
       e2e_group:
         description: "The group of e2e tests that should run"
         required: false
-        type: number
+        type: string
     secrets:
       s3_bucket:
         required: true
