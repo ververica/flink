@@ -53,16 +53,6 @@ jobs:
       - name: Check out repository code
         uses: actions/checkout@v2
       - run: echo "💡 The ${{ github.repository }} repository has been cloned to the runner."
-      - name: Set JDK
-        uses: actions/setup-java@v2
-        with:
-          java-version: '8'
-          distribution: 'adopt'
-
-      - name: Set Maven 3.2.5
-        uses: stCarolas/setup-maven@v4.2
-        with:
-          maven-version: 3.2.5
 
       - name: Test - core
         run: mvn ${{ env.MVN_COMMON_OPTIONS }} ${{ env.MVN_TEST_OPTIONS }} ${{ env.PROFILE }} -pl ${{ env.MVN_TEST_MODULES }} -am verify
