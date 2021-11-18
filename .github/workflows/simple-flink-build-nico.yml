@@ -46,7 +46,7 @@ jobs:
       jdk: 8
       mode: ""
       run_end_to_end: ${{ github.event.inputs.run_end_to_end == 'true' }}
-      e2e_group: ${{ github.event.inputs.e2e_group || '' }}
+      e2e_group: ${{ github.event.inputs.e2e_group }}
     secrets:
       s3_bucket: ""
       s3_access_key: ""

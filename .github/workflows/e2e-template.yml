@@ -89,20 +89,20 @@ jobs:
 
         - name: "Cache Maven local repo"
           uses: actions/cache@v2
-          inputs:
+          with:
             path: ${{ env.MAVEN_CACHE_FOLDER }}
             key: maven-${{ runner.os }}-${{ hashFiles('**/pom.xml', '!**/target/**') }}
             restoreKeys: maven-${{ runner.os }}
 
         - name: "Cache E2E files"
           uses: actions/cache@v2
-          inputs:
+          with:
             path: ${{ env.E2E_CACHE_FOLDER }}
             key: e2e-cache-${{ inputs.group }}-${{ hashFiles('flink-end-to-end-tests/**/*.java', '!**/avro/**') }}
 
         - name: "Cache E2E artifacts"
           uses: actions/cache@v2
-          inputs:
+          with:
             path: ${{ env.E2E_TARBALL_CACHE }}
             key: e2e-artifact-cache-${{ inputs.group }}-${{ hashFiles('flink-end-to-end-tests/**/*.sh') }}
             restoreKeys: e2e-artifact-cache-${{ inputs.group }}
@@ -110,7 +110,7 @@ jobs:
         - name: "Cache Docker images"
           id: docker-cache
           uses: actions/cache@v2
-          inputs:
+          with:
             path: ${{ env.DOCKER_IMAGES_CACHE_FOLDER }}
             key: e2e-${{ inputs.group }}-docker-${{ runner.os }}-${{ hashFiles('**/cache_docker_images.sh', 'flink-test-utils-parent/**/DockerImageVersions.java') }}
 
@@ -123,7 +123,7 @@ jobs:
           uses: actions/setup-java@v2
           with:
             distribution: "temurin"
-            java-version: ${{ inputs.jdk }
+            java-version: ${{ inputs.jdk }}
 
         - name: "Set up Maven" #and SSL??? This replaces the container from the original yml
           uses: stCarolas/setup-maven@v4.2
