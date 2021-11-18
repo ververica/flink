@@ -32,7 +32,6 @@ jobs:
       - name: Install OpenSSL
         run: |
           echo "Installing required software"
-#          sudo apt-get update; apt-get upgrade -y ; \
           apt-get install -y sudo wget
           sudo apt-get install -y bc libapr1
           # install libssl1.0.0 for netty tcnative
