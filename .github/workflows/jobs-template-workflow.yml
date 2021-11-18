@@ -133,7 +133,7 @@ jobs:
       - name: "Flink Checkout"
         uses: actions/checkout@v2
         with:
-          path: ${{ env.FLINK_ARTIFACT_DIR }}
+          path: ${{ env.CHECKOUT_DIR }}
 
       - name: "Set up Maven" # and SSL???
         uses: stCarolas/setup-maven@v4.2
