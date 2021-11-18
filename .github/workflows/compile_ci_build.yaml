@@ -28,7 +28,8 @@ jobs:
 #          pwd
 #          ls -l -a
 #          ls -l -a $PWD
-          ls -lR -l -a /
+          cd /
+          ls -lR -l -a
 
       - name: Cache local Maven repository
         uses: actions/cache@v2
