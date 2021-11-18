@@ -47,7 +47,7 @@ echo "==========================================================================
 
 EXIT_CODE=0
 
-run_mvn clean deploy \
+run_mvn clean install \
   ${MAVEN_OPTS} \
   -DaltDeploymentRepository=validation_repository::default::file:$MVN_VALIDATION_DIR \
   -Dflink.forkCount=2 \
