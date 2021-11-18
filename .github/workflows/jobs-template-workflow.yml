@@ -180,7 +180,7 @@ jobs:
         uses: actions/cache@v2
         with:
           path: ${{ env.DOCKER_IMAGES_CACHE_FOLDER }}
-          key: ${{ matrix.module }}-docker-${{ runner.os }}-${{ hashFiles('**/cache_docker_images.sh', '${{ env.CHECKOUT_DIR }}/flink-test-utils-parent/**/DockerImageVersions.java') }}
+          key: ${{ matrix.module }}-docker-${{ runner.os }}-${{ hashFiles('**/cache_docker_images.sh', env.CHECKOUT_DIR'/flink-test-utils-parent/**/DockerImageVersions.java') }}
           restore-keys: ${{ matrix.module }}-docker-${{ runner.os }}
 
       - name: "Load Docker images if not present in cache, yet"
@@ -297,13 +297,13 @@ jobs:
         uses: actions/cache@v2
         with:
           path: ${{ env.E2E_CACHE_FOLDER }}
-          key: e2e-cache-${{ matrix.group }}-${{ hashFiles('${{ env.CHECKOUT_DIR }}/flink-end-to-end-tests/**/*.java', '!**/avro/**') }}
+          key: e2e-cache-${{ matrix.group }}-${{ hashFiles(env.CHECKOUT_DIR'/flink-end-to-end-tests/**/*.java', '!**/avro/**') }}
 
       - name: "Cache E2E artifacts"
         uses: actions/cache@v2
         with:
           path: ${{ env.E2E_TARBALL_CACHE }}
-          key: e2e-artifact-cache-${{ matrix.group }}-${{ hashFiles('${{ env.CHECKOUT_DIR }}/flink-end-to-end-tests/**/*.sh') }}
+          key: e2e-artifact-cache-${{ matrix.group }}-${{ hashFiles(env.CHECKOUT_DIR'/flink-end-to-end-tests/**/*.sh') }}
           restore-keys: e2e-artifact-cache-${{ matrix.group }}
 
       - name: "Cache Docker images"
@@ -311,7 +311,7 @@ jobs:
         uses: actions/cache@v2
         with:
           path: ${{ env.DOCKER_IMAGES_CACHE_FOLDER }}
-          key: e2e-${{ matrix.group }}-docker-${{ runner.os }}-${{ hashFiles('**/cache_docker_images.sh', '${{ env.CHECKOUT_DIR }}/flink-test-utils-parent/**/DockerImageVersions.java') }}
+          key: e2e-${{ matrix.group }}-docker-${{ runner.os }}-${{ hashFiles('**/cache_docker_images.sh', env.CHECKOUT_DIR'/flink-test-utils-parent/**/DockerImageVersions.java') }}
 
       - name: "Load Docker images if not present in cache, yet"
         working-directory: ${{ env.CHECKOUT_DIR }}
