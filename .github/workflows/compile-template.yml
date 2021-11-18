@@ -1,0 +1,79 @@
+on:
+  workflow_call:
+    inputs:
+      stage_name:
+        description: "defines a unique identifier for all jobs in a stage (in case the jobs are added multiple times to a stage)"
+        required: true
+        type: string
+      environment:
+        description: "defines environment variables for downstream scripts"
+        required: true
+        type: string
+      jdk:
+        description: "the jdk version to use"
+        required: true
+        type: number
+      mode:
+        description: "mode of execution. Can be nightly, e2e, release"
+        required: true
+        type: string
+
+
+env:
+  FLINK_ARTIFACT_DIR: ${{ github.workspace }}/flink_artifacts
+  MAVEN_REPOSITORY_DIR: ${{ github.workspace }}/.m2/repository
+
+
+jobs:
+  compile:
+    name: "Compile"
+    runs-on: ubuntu-latest
+    if: ${{ success() && inputs.mode != 'e2e' }}
+    timeout-minutes: 240
+    steps:
+      - name: "Checks out Flink"
+        uses: actions/checkout@v2
+
+      - name: "Set up Maven" # and SSL???
+        uses: stCarolas/setup-maven@v4.2
+        with:
+          maven-version: 3.2.5
+
+      # The cache task is persisting the .m2 directory between builds, so that
+      # we do not have to re-download all dependencies from maven central for
+      # each build. The hope is that downloading the cache is faster than
+      # all dependencies individually.
+      # In this configuration, we use a hash over all committed (not generated) .pom files
+      # as a key for the build cache (CACHE_KEY). If we have a cache miss on the hash
+      # (usually because a pom file has changed), we'll fall back to a key without
+      # the pom files (CACHE_FALLBACK_KEY).
+      - name: "Cache Maven local repo"
+        if: ${{ inputs.test_pool_name != 'Default' }}
+        uses: actions/cache@v2
+        with:
+          path: ${{ env.MAVEN_REPOSITORY_DIR }}
+          key: maven-${{ runner.os }}-${{ hashFiles('**/pom.xml', '!**/target/**') }}
+          restore-keys: maven-${{ runner.os }}
+
+      # see https://github.com/actions/setup-java#supported-distributions
+      - name: "Set JDK ${{ inputs.jdk }}"
+        uses: actions/setup-java@v2
+        with:
+          distribution: "temurin"
+          java-version: ${{ inputs.jdk }}
+
+      - name: "Compile Flink"
+        env:
+          MAVEN_OPTS: " -Dmaven.repo.local=${{ env.MAVEN_REPOSITORY_DIR }}"
+        run: |
+          ${{ inputs.environment }} ./tools/ci/compile.sh || exit $?
+
+      - name: "Collect build artifacts"
+        run: ./tools/azure-pipelines/create_build_artifact.sh -f ${{ env.FLINK_ARTIFACT_DIR }}
+
+      # upload artifacts for next stage
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: FlinkCompileArtifact-${{ inputs.stage_name }}
+          path: ${{ env.FLINK_ARTIFACT_DIR }}

@@ -37,22 +37,51 @@ on:
         required: false
 
 
+env:
+  STAGE_NAME: "ci"
+  ENVIRONMENT: 'PROFILE="-Dhadoop.version=2.8.3 -Dinclude_hadoop_aws -Dscala-2.12"'
+  JDK: 8
+  MODE: ""
+
+
 jobs:
-  ci:
-    uses: ververica/flink/.github/workflows/jobs-template-workflow.yml@hackathon2021b-nico
+  compile:
+    uses: ververica/flink/.github/workflows/compile-template.yml@hackathon2021b-nico
     with:
-      stage_name: "ci"
-      environment: 'PROFILE="-Dhadoop.version=2.8.3 -Dinclude_hadoop_aws -Dscala-2.12"'
-      jdk: 8
-      mode: ""
-      run_end_to_end: ${{ github.event.inputs.run_end_to_end == 'true' }}
-      e2e_group: ${{ github.event.inputs.e2e_group }}
+      stage_name: ${{ env.STAGE_NAME }}
+      environment: ${{ env.ENVIRONMENT }}
+      jdk: ${{ env.JDK }}
+      mode: ${{ env.MODE }}
+
+  test:
+    uses: ververica/flink/.github/workflows/test-template.yml@hackathon2021b-nico
+    with:
+      stage_name: ${{ env.STAGE_NAME }}
+      environment: ${{ env.ENVIRONMENT }}
+      jdk: ${{ env.JDK }}
+      mode: ${{ env.MODE }}
     secrets:
-      s3_bucket: ""
-      s3_access_key: ""
-      s3_secret_key: ""
-      glue_schema_access_key: ""
-      glue_schema_secret_key: ""
+      s3_bucket: ${{ secrets.s3_bucket }}
+      s3_access_key: ${{ secrets.s3_access_key }}
+      s3_secret_key: ${{ secrets.s3_secret_key }}
+      glue_schema_access_key: ${{ secrets.glue_schema_access_key }}
+      glue_schema_secret_key: ${{ secrets.glue_schema_secret_key }}
+
+  e2e-test:
+    uses: ververica/flink/.github/workflows/e2e-template.yml@hackathon2021b-nico
+    if: ${{ github.event.inputs.run_end_to_end == 'true' }}
+    with:
+      stage_name: ${{ env.STAGE_NAME }}
+      environment: ${{ env.ENVIRONMENT }}
+      jdk: ${{ env.JDK }}
+      group: ${{ github.event.inputs.e2e_group }}
+    secrets:
+      s3_bucket: ${{ secrets.s3_bucket }}
+      s3_access_key: ${{ secrets.s3_access_key }}
+      s3_secret_key: ${{ secrets.s3_secret_key }}
+      glue_schema_access_key: ${{ secrets.glue_schema_access_key }}
+      glue_schema_secret_key: ${{ secrets.glue_schema_secret_key }}
+
   docs-404-check:
     runs-on: ubuntu-latest
     steps:
