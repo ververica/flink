@@ -49,7 +49,6 @@ EXIT_CODE=0
 
 run_mvn clean install \
   ${MAVEN_OPTS} \
-  -DaltDeploymentRepository=validation_repository::default::file:$MVN_VALIDATION_DIR \
   -Dflink.forkCount=2 \
   -Dflink.forkCountTestPackage=2 \
   -Dscala-2.12 \
@@ -127,10 +126,6 @@ check_shaded_artifacts_connector_elasticsearch 6
 EXIT_CODE=$(($EXIT_CODE+$?))
 
 echo "============ Run license check ============"
-
-find $MVN_VALIDATION_DIR
-
-${CI_DIR}/license_check.sh $MVN_CLEAN_COMPILE_OUT $CI_DIR $(pwd) $MVN_VALIDATION_DIR || exit $?
 
 exit $EXIT_CODE
 
