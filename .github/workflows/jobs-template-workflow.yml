@@ -117,6 +117,7 @@ jobs:
     runs-on: ubuntu-20.04
     if: ${{ success() && inputs.mode != 'e2e' }}
     strategy:
+      fail-fast: false
       matrix:
         module:
           - core
