@@ -47,7 +47,8 @@ on:
         required: true
 
 env:
-  FLINK_ARTIFACT_DIR: ${{ github.workspace }}/flink_artifacts.tar.gz
+  FLINK_ARTIFACT_DIR: ${{ github.workspace }}/
+  FLINK_ARTIFACT_FILENAME: flink_artifacts.tar.gz
   MAVEN_REPOSITORY_DIR: ${{ github.workspace }}/.m2/repository
   DOCKER_IMAGES_CACHE_FOLDER: ${{ github.workspace }}/.docker-cache
   CHECKOUT_DIR: ${{ github.workspace }}/flink-checkout
@@ -101,14 +102,14 @@ jobs:
 
       - name: "Collect build artifacts"
         working-directory: ${{ env.CHECKOUT_DIR }}
-        run: ./tools/azure-pipelines/create_build_artifact.sh -f ${{ env.FLINK_ARTIFACT_DIR }}
+        run: ./tools/azure-pipelines/create_build_artifact.sh -f ${{ env.FLINK_ARTIFACT_DIR }}/${{ env.FLINK_ARTIFACT_FILENAME }}
 
       # upload artifacts for next stage
       - name: Upload artifacts
         uses: actions/upload-artifact@v2
         with:
           name: FlinkCompileArtifact-${{ inputs.stage_name }}
-          path: ${{ env.FLINK_ARTIFACT_DIR }}
+          path: ${{ env.FLINK_ARTIFACT_DIR }}/${{ env.FLINK_ARTIFACT_FILENAME }}
 
   test:
     name: "Test (module: ${{ matrix.module }})"
@@ -155,7 +156,7 @@ jobs:
 
       - name: "Unpack Build artifact"
         working-directory: ${{ env.CHECKOUT_DIR }}
-        run: ./tools/azure-pipelines/unpack_build_artifact.sh -f ${{ env.FLINK_ARTIFACT_DIR }} -t ${{ env.CHECKOUT_DIR }}
+        run: ./tools/azure-pipelines/unpack_build_artifact.sh -f ${{ env.FLINK_ARTIFACT_DIR }}/${{ env.FLINK_ARTIFACT_FILENAME }} -t ${{ env.CHECKOUT_DIR }}
 
       - name: "Cache Maven local repo"
         if: ${{ inputs.test_pool_name != 'Default' }}
