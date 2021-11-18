@@ -31,10 +31,13 @@ jobs:
       - run: openssl version
       - name: Install OpenSSL
         run: |
-          echo "Installing required software"
+          echo "Remove old OpenSSL"
+          sudo apt-get remove openssl
+          echo "Installing wget"
           sudo apt-get install -y bc wget
+          echo "Install librapr1 for netty tcnative"
           sudo apt-get install -y bc libapr1
-          # install libssl1.0.0 for netty tcnative
+          echo "Install libssl1.0.0"
           wget http://security.ubuntu.com/ubuntu/pool/main/o/openssl1.0/libssl1.0.0_1.0.2n-1ubuntu5.7_amd64.deb
           sudo apt install ./libssl1.0.0_1.0.2n-1ubuntu5.7_amd64.deb\
       - run: openssl version
