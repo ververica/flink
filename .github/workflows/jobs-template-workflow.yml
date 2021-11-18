@@ -60,6 +60,9 @@ jobs:
     if: ${{ success() && inputs.mode != 'e2e' }}
     timeout-minutes: 240
     steps:
+      - name: "Environment variables"
+        run: env
+        
       - name: "Checks out Flink"
         uses: actions/checkout@v2
         with:
