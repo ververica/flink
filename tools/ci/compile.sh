@@ -62,7 +62,8 @@ run_mvn clean install \
   -Dskip.npm=true \
   -DskipITs=true \
   -Dmaven.javadoc.skip=true \
-  -Djapicmp.skip=true | tee $MVN_CLEAN_COMPILE_OUT
+  -Djapicmp.skip=true \
+  -pl flink-dist -am | tee $MVN_CLEAN_COMPILE_OUT
 #run_mvn clean deploy -DaltDeploymentRepository=validation_repository::default::file:$MVN_VALIDATION_DIR $MAVEN_OPTS -Dflink.convergence.phase=install -Pcheck-convergence -Dflink.forkCount=2 \
 #    -Dflink.forkCountTestPackage=2 -Dmaven.javadoc.skip=true -U -DskipTests | tee $MVN_CLEAN_COMPILE_OUT
 
