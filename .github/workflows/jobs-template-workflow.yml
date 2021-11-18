@@ -235,6 +235,11 @@ jobs:
     outputs:
       skip-e2e: ${{ steps.docs-only-pr-check.skip-e2e }}
     steps:
+      - name: "Flink Checkout"
+        uses: actions/checkout@v2
+        with:
+          path: ${{ env.CHECKOUT_DIR }}
+
       # Skip e2e test execution if this is a documentation only pull request (master / release builds will still be checked regularly)
       - name: "Check if it's a docs-only PR (i.e. e2e tests can be skipped)"
         id: docs-only-pr-check
