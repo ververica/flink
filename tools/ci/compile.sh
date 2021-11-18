@@ -50,7 +50,7 @@ EXIT_CODE=0
 run_mvn clean deploy \
   ${MAVEN_OPTS} \
   -Dflink.forkCount=2 \
-  Dflink.forkCountTestPackage=2 \
+  -Dflink.forkCountTestPackage=2 \
   -Dscala-2.12 \
   -DskipTests \
   -Dcheckstyle.skip \
