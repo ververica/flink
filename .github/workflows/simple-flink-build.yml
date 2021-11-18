@@ -21,38 +21,11 @@
 #  - custom triggered e2e tests
 #  - nightly builds
 
-name: "Hadoop 2.8.3"
+name: "Test OpenSSL on self-hosted"
 
-on:
-  push:
-    branches:
-      - hackathon2021b-migrate-to-GHA
-  workflow_dispatch:
-
+on: [push]
 jobs:
-  ci:
-    uses: ververica/flink/.github/workflows/jobs-template-workflow.yml@hackathon2021b-migrate-to-GHA
-    with:
-      stage_name: "ci"
-      environment: 'PROFILE="-Dhadoop.version=2.8.3 -Dinclude_hadoop_aws -Dscala-2.12"'
-      jdk: 8
-      mode: ""
-    secrets:
-      s3_bucket: ""
-      s3_access_key: ""
-      s3_secret_key: ""
-      glue_schema_access_key: ""
-      glue_schema_secret_key: ""
-  docs-404-check:
-    runs-on: ubuntu-latest
+  compile_ci:
+    runs-on: self-hosted
     steps:
-      - name: "Checks out Flink"
-        uses: actions/checkout@v2
-
-      - name: "Check if PR contains docs change"
-        run: |
-          source ./tools/azure-pipelines/build_properties.sh
-          pr_contains_docs_changes
-
-      - name: "Builds docs"
-        run: ./tools/ci/docs.sh
+      - run: openssl version
