@@ -2,7 +2,7 @@ name: Build Flink with Maven
 on: [push]
 jobs:
   compile_ci:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
       - run: echo "🎉 The job was automatically triggered by a ${{ github.event_name }} event."
       - run: echo "🔎 The name of your branch is ${{ github.ref }} and your repository is ${{ github.repository }}."
@@ -50,7 +50,7 @@ jobs:
 
   test_ci_core:
     needs: compile_ci
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     env:
       MVN_COMMON_OPTIONS: -Dflink.forkCount=2 -Dflink.forkCountTestPackage=2 -Dfast -Pskip-webui-build
       MVN_TEST_OPTIONS: -Dflink.tests.with-openssl -Dflink.tests.check-segment-multiple-free
