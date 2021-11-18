@@ -21,12 +21,12 @@
 #  - custom triggered e2e tests
 #  - nightly builds
 
-name: "Hadoop 2.8.3"
+name: "Hadoop 2.8.3 (Matthias)"
 
 on:
   push:
     branches:
-      - hackathon2021b-migrate-to-GHA
+      - hackathon2021b-matthias
   workflow_dispatch:
 
 jobs:
