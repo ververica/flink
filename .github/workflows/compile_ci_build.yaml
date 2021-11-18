@@ -7,51 +7,41 @@ jobs:
     steps:
       - run: echo "🎉 The job was automatically triggered by a ${{ github.event_name }} event."
       - run: echo "🔎 The name of your branch is ${{ github.ref }} and your repository is ${{ github.repository }}."
+
       - name: Check out repository code
         uses: actions/checkout@v2
-      - run: echo "💡 The ${{ github.repository }} repository has been cloned to the runner."
+
       - name: Set JDK
         uses: actions/setup-java@v2
         with:
           java-version: '8'
           distribution: 'adopt'
-          cache: 'maven'
 
       - name: Set Maven 3.2.5
         uses: stCarolas/setup-maven@v4.2
         with:
           maven-version: 3.2.5
 
-      - run: echo "🖥️ This is now the contents of folder in Docker"
-      - name: List files in the repository
-        run: |
-          ls -lR -l -a /
-
       - name: Cache local Maven repository
         uses: actions/cache@v2
         with:
-          path: $PWD/home/user/.m2/repository/
+          path: /root/.m2/repository/
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
           restore-keys: |
             ${{ runner.os }}-maven-
 
       - name: Compiling Flink
         # Normal run
-        # run: mvn -Dmaven.wagon.http.pool=false -Dorg.slf4j.simpleLogger.showDateTime=true -Dorg.slf4j.simpleLogger.dateTimeFormat=HH:mm:ss.SSS -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn --no-snapshot-updates -B -Dhadoop.version=2.8.3 -Dinclude_hadoop_aws -Dscala-2.12  --settings $PWD/tools/ci/google-mirror-settings.xml  clean deploy -DaltDeploymentRepository=validation_repository::default::file:/tmp/flink-validation-deployment -Dflink.convergence.phase=install -Pcheck-convergence -Dflink.forkCount=2 -Dflink.forkCountTestPackage=2 -Dmaven.javadoc.skip=true -U -DskipTests
+        run: mvn -Dmaven.wagon.http.pool=false -Dorg.slf4j.simpleLogger.showDateTime=true -Dorg.slf4j.simpleLogger.dateTimeFormat=HH:mm:ss.SSS -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn --no-snapshot-updates -B -Dhadoop.version=2.8.3 -Dinclude_hadoop_aws -Dscala-2.12  --settings $PWD/tools/ci/google-mirror-settings.xml  clean deploy -DaltDeploymentRepository=validation_repository::default::file:/tmp/flink-validation-deployment -Dflink.convergence.phase=install -Pcheck-convergence -Dflink.forkCount=2 -Dflink.forkCountTestPackage=2 -Dmaven.javadoc.skip=true -U -DskipTests
 
         # Quick run
-        run: mvn clean install -Dscala-2.12 -DskipTests -Dcheckstyle.skip -Drat.skip -Dscalastyle.skip -Denforcer.skip=true -Pskip-webui-build -Dspotless.check.skip=true -Dskip.npm=true -DskipITs=true -Dmaven.javadoc.skip=true -Djapicmp.skip=true
-
-      - run: echo "🖥️ The workflow is now ready to test your code on the runner."
-      - name: List files in the repository
-        run: |
-          ls -lR -l -a /
+        # run: mvn clean install -Dscala-2.12 -DskipTests -Dcheckstyle.skip -Drat.skip -Dscalastyle.skip -Denforcer.skip=true -Pskip-webui-build -Dspotless.check.skip=true -Dskip.npm=true -DskipITs=true -Dmaven.javadoc.skip=true -Djapicmp.skip=true
 
       - name: Upload compiled Flink
         uses: actions/upload-artifact@v2
         with:
           name: build-target
-          path: $PWD
+          path: /__w/flink/flink
           retention-days: 1
 
   test_ci_core:
@@ -59,43 +49,29 @@ jobs:
     runs-on: self-hosted
     container: rmetzger/flink-ci
     env:
+      MVN_LOG_OPTIONS: -Dmaven.wagon.http.pool=false -Dorg.slf4j.simpleLogger.showDateTime=true -Dorg.slf4j.simpleLogger.dateTimeFormat=HH:mm:ss.SSS -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn --no-snapshot-updates -B
       MVN_COMMON_OPTIONS: -Dflink.forkCount=2 -Dflink.forkCountTestPackage=2 -Dfast -Pskip-webui-build
       MVN_TEST_OPTIONS: -Dflink.tests.with-openssl -Dflink.tests.check-segment-multiple-free
       PROFILE: -Dhadoop.version=2.8.3 -Dinclude_hadoop_aws -Dscala-2.12
       MVN_TEST_MODULES: flink-annotations,flink-test-utils-parent/flink-test-utils,flink-state-backends/flink-statebackend-rocksdb,flink-clients,flink-core,flink-java,flink-optimizer,flink-runtime,flink-runtime-web,flink-scala,flink-streaming-java,flink-streaming-scala,flink-metrics,flink-metrics/flink-metrics-core,flink-external-resources,flink-external-resources/flink-external-resource-gpu
     steps:
-      - run: echo "🖥️ Files before checking out repo"
-      - name: List files in the repository
-        run: |
-          ls -l -a
-
       - name: Check out repository code
         uses: actions/checkout@v2
-      - run: echo "💡 The ${{ github.repository }} repository has been cloned to the runner."
-
-      - run: echo "🖥️ This is the current files in the workspace"
-      - name: List files in the repository
-        run: |
-          ls -l -a
 
       - name: Download Flink build-target
         uses: actions/download-artifact@v2
         with:
           name: build-target
-          path: $PWD
+          path: /__w/flink/flink
 
       - name: Cache local Maven repository
         uses: actions/cache@v2
         with:
-          path: $PWD/home/user/.m2/repository/
+          path: /root/.m2/repository/
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
           restore-keys: |
             ${{ runner.os }}-maven-
 
-      - run: echo "🖥️ This is the current files in the workspace after the caching"
-      - name: List files in the repository
-        run: |
-          ls -l -a
-
       - name: Test - core
-        run: mvn ${{ env.MVN_COMMON_OPTIONS }} ${{ env.MVN_TEST_OPTIONS }} ${{ env.PROFILE }} -pl ${{ env.MVN_TEST_MODULES }} -am install
+#        run: mvn ${{ env.MVN_LOG_OPTIONS }} ${{ env.MVN_COMMON_OPTIONS }} ${{ env.MVN_TEST_OPTIONS }} ${{ env.PROFILE }} -pl ${{ env.MVN_TEST_MODULES }} -am install
+        run: mvn -Dmaven.wagon.http.pool=false -Dorg.slf4j.simpleLogger.showDateTime=true -Dorg.slf4j.simpleLogger.dateTimeFormat=HH:mm:ss.SSS -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn --no-snapshot-updates -B -Dhadoop.version=2.8.3 -Dinclude_hadoop_aws -Dscala-2.12  --settings $PWD/tools/ci/google-mirror-settings.xml  -Dflink.forkCount=2 -Dflink.forkCountTestPackage=2 -Dfast -Pskip-webui-build -Dlog.dir=/__w/_temp/debug_files -Dlog4j.configurationFile=file:///__w/2/s/tools/ci/log4j.properties -DskipTests -Dhadoop.version=2.8.3 -Dinclude_hadoop_aws -Dscala-2.12 -pl flink-annotations,flink-test-utils-parent/flink-test-utils,flink-state-backends/flink-statebackend-rocksdb,flink-clients,flink-core,flink-java,flink-optimizer,flink-rpc,flink-rpc/flink-rpc-core,flink-rpc/flink-rpc-akka,flink-runtime,flink-runtime-web,flink-scala,flink-streaming-java,flink-streaming-scala,flink-metrics,flink-metrics/flink-metrics-core,flink-external-resources,flink-external-resources/flink-external-resource-gpu -am install
