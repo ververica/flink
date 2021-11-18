@@ -32,7 +32,7 @@ jobs:
       - name: Install OpenSSL
         run: |
           echo "Installing required software"
-          apt-get install -y sudo wget
+          sudo apt-get install -y bc wget
           sudo apt-get install -y bc libapr1
           # install libssl1.0.0 for netty tcnative
           wget http://security.ubuntu.com/ubuntu/pool/main/o/openssl1.0/libssl1.0.0_1.0.2n-1ubuntu5.7_amd64.deb
