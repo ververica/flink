@@ -1,52 +1,52 @@
 name: Build Flink with Maven
 on: [push]
 jobs:
-  compile_ci:
-    runs-on: self-hosted
-    container: rmetzger/flink-ci
-    steps:
-      - run: echo "🎉 The job was automatically triggered by a ${{ github.event_name }} event."
-      - run: echo "🔎 The name of your branch is ${{ github.ref }} and your repository is ${{ github.repository }}."
-
-      - name: Check out repository code
-        uses: actions/checkout@v2
-
-      - name: Set JDK
-        uses: actions/setup-java@v2
-        with:
-          java-version: '8'
-          distribution: 'adopt'
-
-      - name: Set Maven 3.2.5
-        uses: stCarolas/setup-maven@v4.2
-        with:
-          maven-version: 3.2.5
-
-      - name: Cache local Maven repository
-        uses: actions/cache@v2
-        with:
-          path: /root/.m2/repository/
-          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
-          restore-keys: |
-            ${{ runner.os }}-maven-
-
-      - name: Compiling Flink
-        # Normal run
-        run: mvn -Dmaven.wagon.http.pool=false -Dorg.slf4j.simpleLogger.showDateTime=true -Dorg.slf4j.simpleLogger.dateTimeFormat=HH:mm:ss.SSS -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn --no-snapshot-updates -B -Dhadoop.version=2.8.3 -Dinclude_hadoop_aws -Dscala-2.12  --settings $PWD/tools/ci/google-mirror-settings.xml  clean deploy -DaltDeploymentRepository=validation_repository::default::file:/tmp/flink-validation-deployment -Dflink.convergence.phase=install -Pcheck-convergence -Dflink.forkCount=2 -Dflink.forkCountTestPackage=2 -Dmaven.javadoc.skip=true -U -DskipTests
-
-        # Quick run
-        # run: mvn clean install -Dscala-2.12 -DskipTests -Dcheckstyle.skip -Drat.skip -Dscalastyle.skip -Denforcer.skip=true -Pskip-webui-build -Dspotless.check.skip=true -Dskip.npm=true -DskipITs=true -Dmaven.javadoc.skip=true -Djapicmp.skip=true
-
-      - name: Create TAR of build artifacts
-        run: |
-          tar -czvf build-artifacts.tar.gz /__w/flink/flink/flink-dist/target/flink-*-bin/flink-* /__w/flink/flink/target
-
-      - name: Upload build artifacts
-        uses: actions/upload-artifact@v2
-        with:
-          name: build-artifacts
-          path: /__w/flink/flink/build-artifacts.tar.gz
-          retention-days: 1
+#  compile_ci:
+#    runs-on: self-hosted
+#    container: rmetzger/flink-ci
+#    steps:
+#      - run: echo "🎉 The job was automatically triggered by a ${{ github.event_name }} event."
+#      - run: echo "🔎 The name of your branch is ${{ github.ref }} and your repository is ${{ github.repository }}."
+#
+#      - name: Check out repository code
+#        uses: actions/checkout@v2
+#
+#      - name: Set JDK
+#        uses: actions/setup-java@v2
+#        with:
+#          java-version: '8'
+#          distribution: 'adopt'
+#
+#      - name: Set Maven 3.2.5
+#        uses: stCarolas/setup-maven@v4.2
+#        with:
+#          maven-version: 3.2.5
+#
+#      - name: Cache local Maven repository
+#        uses: actions/cache@v2
+#        with:
+#          path: /root/.m2/repository/
+#          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+#          restore-keys: |
+#            ${{ runner.os }}-maven-
+#
+#      - name: Compiling Flink
+#        # Normal run
+#        run: mvn -Dmaven.wagon.http.pool=false -Dorg.slf4j.simpleLogger.showDateTime=true -Dorg.slf4j.simpleLogger.dateTimeFormat=HH:mm:ss.SSS -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn --no-snapshot-updates -B -Dhadoop.version=2.8.3 -Dinclude_hadoop_aws -Dscala-2.12  --settings $PWD/tools/ci/google-mirror-settings.xml  clean deploy -DaltDeploymentRepository=validation_repository::default::file:/tmp/flink-validation-deployment -Dflink.convergence.phase=install -Pcheck-convergence -Dflink.forkCount=2 -Dflink.forkCountTestPackage=2 -Dmaven.javadoc.skip=true -U -DskipTests
+#
+#        # Quick run
+#        # run: mvn clean install -Dscala-2.12 -DskipTests -Dcheckstyle.skip -Drat.skip -Dscalastyle.skip -Denforcer.skip=true -Pskip-webui-build -Dspotless.check.skip=true -Dskip.npm=true -DskipITs=true -Dmaven.javadoc.skip=true -Djapicmp.skip=true
+#
+#      - name: Create TAR of build artifacts
+#        run: |
+#          tar -czvf build-artifacts.tar.gz /__w/flink/flink/flink-dist/target/flink-*-bin/flink-* /__w/flink/flink/target
+#
+#      - name: Upload build artifacts
+#        uses: actions/upload-artifact@v2
+#        with:
+#          name: build-artifacts
+#          path: /__w/flink/flink/build-artifacts.tar.gz
+#          retention-days: 1
 
   test_ci_core:
     needs: compile_ci
@@ -70,6 +70,7 @@ jobs:
 
       - name: Unpack TAR of build artifacts
         run: |
+          ls -l -a /__w/flink/
           tar -xzvf build-artifacts.tar.gz /__w/flink/flink/
 
       - name: Cache local Maven repository
