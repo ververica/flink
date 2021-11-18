@@ -18,20 +18,12 @@ name: "E2E Test Run"
 on:
   workflow_call:
     inputs:
-      e2e_pool_definion:
-        descrition: "Defines the hardware pool for end-to-end test execution"
-        required: true
-        type: string
       stage_name:
         description: "Defines a unique identifier for all jobs in a stage (in case the jobs are added multiple times to a stage)"
         required: true
         type: string
       environment:
         description: "Defines environment variables for downstream scripts"
-        required: true
-        type: string
-      run_end_to_end:
-        description: "If set to 'true', the end to end tests will be executed"
         required: true
         type: string
       jdk:
