@@ -291,7 +291,7 @@ jobs:
         with:
           path: ${{ env.MAVEN_REPOSITORY_DIR }}
           key: maven-${{ runner.os }}-${{ hashFiles('**/pom.xml', '!**/target/**') }}
-          restoreKeys: maven-${{ runner.os }}
+          restore-keys: maven-${{ runner.os }}
 
       - name: "Cache E2E files"
         uses: actions/cache@v2
@@ -304,7 +304,7 @@ jobs:
         with:
           path: ${{ env.E2E_TARBALL_CACHE }}
           key: e2e-artifact-cache-${{ matrix.group }}-${{ hashFiles('flink-end-to-end-tests/**/*.sh') }}
-          restoreKeys: e2e-artifact-cache-${{ matrix.group }}
+          restore-keys: e2e-artifact-cache-${{ matrix.group }}
 
       - name: "Cache Docker images"
         id: docker-cache
