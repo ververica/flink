@@ -37,18 +37,15 @@ jobs:
         # Quick run
         # run: mvn clean install -Dscala-2.12 -DskipTests -Dcheckstyle.skip -Drat.skip -Dscalastyle.skip -Denforcer.skip=true -Pskip-webui-build -Dspotless.check.skip=true -Dskip.npm=true -DskipITs=true -Dmaven.javadoc.skip=true -Djapicmp.skip=true
 
-      - name: Upload compiled Flink
-        uses: actions/upload-artifact@v2
-        with:
-          name: build-target
-          path: /__w/flink/flink/flink-dist/target/flink-*-bin/flink-*
-          retention-days: 1
+      - name: Create TAR of build artifacts
+        run: |
+          tar -czvf build-artifacts.tar.gz /__w/flink/flink/flink-dist/target/flink-*-bin/flink-* /__w/flink/flink/target
 
-      - name: Upload compiled Flink target
+      - name: Upload build artifacts
         uses: actions/upload-artifact@v2
         with:
-          name: target
-          path: /__w/flink/flink/target
+          name: build-artifacts
+          path: /__w/flink/flink/build-artifacts.tar.gz
           retention-days: 1
 
   test_ci_core:
@@ -65,17 +62,15 @@ jobs:
       - name: Check out repository code
         uses: actions/checkout@v2
 
-      - name: Download Flink build-target
+      - name: Download build artifacts
         uses: actions/download-artifact@v2
         with:
-          name: build-target
-          path: /__w/flink/flink/flink-dist/target/flink-*-bin/flink-*
+          name: build-artifacts
+          path: /__w/flink/flink/
 
-      - name: Download Flink target
-        uses: actions/download-artifact@v2
-        with:
-          name: target
-          path: /__w/flink/flink/target
+      - name: Unpack TAR of build artifacts
+        run: |
+          tar -xzvf build-artifacts.tar.gz /__w/flink/flink/
 
       - name: Cache local Maven repository
         uses: actions/cache@v2
