@@ -3,6 +3,7 @@ on: [push]
 jobs:
 #  compile_ci:
 #    runs-on: self-hosted
+#    container: rmetzger/flink-ci
 #    steps:
 #      - run: echo "🎉 The job was automatically triggered by a ${{ github.event_name }} event."
 #      - run: echo "🔎 The name of your branch is ${{ github.ref }} and your repository is ${{ github.repository }}."
@@ -73,7 +74,7 @@ jobs:
       - name: Cache local Maven repository
         uses: actions/cache@v2
         with:
-          path: ~/.m2/repository
+          path: /home/user/.m2/repository/
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
           restore-keys: |
             ${{ runner.os }}-maven-
