@@ -63,7 +63,7 @@ jobs:
       - run: echo "🖥️ This is the current files in the workspace"
       - name: List files in the repository
         run: |
-          ls -l -a
+          ls -l -a /home/user/flink
 
       - name: Download Flink build-target
         uses: actions/download-artifact@v2
