@@ -17,10 +17,12 @@
 # limitations under the License.
 ################################################################################
 
-while getopts "f:" o; do
+while getopts "f:t:" o; do
     case "${o}" in
         f)
             FLINK_ARTIFACT_DIR=${OPTARG};;
+        t)
+            TARGET_FOLDER_PARAMETER="-C ${OPTARG}";;
         *)
           # no special treatment of invalid parameters necessary
           ;;
@@ -34,7 +36,7 @@ if ! [ -e $FLINK_ARTIFACT_DIR ]; then
 fi
 
 echo "Extracting build artifacts"
-tar -xzf ${FLINK_ARTIFACT_DIR}
+tar -xzf ${FLINK_ARTIFACT_DIR} ${TARGET_FOLDER_PARAMETER}
 
 echo "Adjusting timestamps"
 # adjust timestamps of proto file to avoid re-generation

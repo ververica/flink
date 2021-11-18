@@ -155,7 +155,7 @@ jobs:
 
       - name: "Unpack Build artifact"
         working-directory: ${{ env.CHECKOUT_DIR }}
-        run: ./tools/azure-pipelines/unpack_build_artifact.sh -f ${{ env.FLINK_ARTIFACT_DIR }}
+        run: ./tools/azure-pipelines/unpack_build_artifact.sh -f ${{ env.FLINK_ARTIFACT_DIR }} -t ${{ env.CHECKOUT_DIR }}
 
       - name: "Cache Maven local repo"
         if: ${{ inputs.test_pool_name != 'Default' }}
