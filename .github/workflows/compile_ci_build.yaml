@@ -2,7 +2,7 @@ name: Build Flink with Maven
 on: [push]
 jobs:
   compile_ci:
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     steps:
       - run: echo "🎉 The job was automatically triggered by a ${{ github.event_name }} event."
       - run: echo "🔎 The name of your branch is ${{ github.ref }} and your repository is ${{ github.repository }}."
@@ -47,14 +47,9 @@ jobs:
           name: build-target
           path: ${{ github.workspace }}/build-target
 
-      - name: Clean runner workspace
-        run: |
-          echo "Cleaning up run"
-          rm -rf "${{ github.workspace }}"
-
   test_ci_core:
     needs: compile_ci
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     env:
       MVN_COMMON_OPTIONS: -Dflink.forkCount=2 -Dflink.forkCountTestPackage=2 -Dfast -Pskip-webui-build
       MVN_TEST_OPTIONS: -Dflink.tests.with-openssl -Dflink.tests.check-segment-multiple-free
@@ -93,8 +88,3 @@ jobs:
 
       - name: Test - core
         run: mvn ${{ env.MVN_COMMON_OPTIONS }} ${{ env.MVN_TEST_OPTIONS }} ${{ env.PROFILE }} -pl ${{ env.MVN_TEST_MODULES }} -am verify
-
-      - name: Clean runner workspace
-        run: |
-          echo "Cleaning up run"
-          rm -rf "${{ github.workspace }}"
