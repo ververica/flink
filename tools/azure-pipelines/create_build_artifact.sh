@@ -52,4 +52,4 @@ rm -rf "./target/site"
 rm -rf "./flink-runtime-web/web-dashboard/node"
 rm -rf "./flink-runtime-web/web-dashboard/node_modules"
 
-tar -czf ${FLINK_ARTIFACT_DIR} .
+tar -czf --exclude ${FLINK_ARTIFACT_DIR} ${FLINK_ARTIFACT_DIR} .
