@@ -41,7 +41,7 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: build-target
-          path: /__w/flink/flink/build-target
+          path: /__w/flink/flink/flink-dist/target/flink-*-bin/flink-*
           retention-days: 1
 
   test_ci_core:
@@ -62,7 +62,7 @@ jobs:
         uses: actions/download-artifact@v2
         with:
           name: build-target
-          path: /__w/flink/flink/build-target
+          path: /__w/flink/flink/flink-dist/target/flink-*-bin/flink-*
 
       - name: Cache local Maven repository
         uses: actions/cache@v2
