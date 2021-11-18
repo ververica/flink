@@ -32,7 +32,7 @@ jobs:
       - name: Install OpenSSL
         run: |
           echo "Remove old OpenSSL"
-          sudo apt-get remove openssl
+          sudo apt-get remove -y openssl
           echo "Installing wget"
           sudo apt-get install -y bc wget
           echo "Install librapr1 for netty tcnative"
