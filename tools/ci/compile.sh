@@ -49,6 +49,7 @@ EXIT_CODE=0
 
 run_mvn clean deploy \
   ${MAVEN_OPTS} \
+  -DaltDeploymentRepository=validation_repository::default::file:$MVN_VALIDATION_DIR \
   -Dflink.forkCount=2 \
   -Dflink.forkCountTestPackage=2 \
   -Dscala-2.12 \
