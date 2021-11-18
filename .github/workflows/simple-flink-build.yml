@@ -32,8 +32,8 @@ jobs:
       - name: Install OpenSSL
         run: |
           echo "Installing required software"
-          sudo apt-get update; apt-get upgrade -y ; \
-          sudo apt-get install -y gosu sudo locales make less git build-essential openjdk-8-jdk curl libapr1 unzip uuid-runtime jq bsdmainutils wget python docker.io psmisc software-properties-common apt-transport-https
+#          sudo apt-get update; apt-get upgrade -y ; \
+          apt-get install -y sudo wget
           sudo apt-get install -y bc libapr1
           # install libssl1.0.0 for netty tcnative
           wget http://security.ubuntu.com/ubuntu/pool/main/o/openssl1.0/libssl1.0.0_1.0.2n-1ubuntu5.7_amd64.deb
