@@ -210,6 +210,10 @@ jobs:
               -t 240 \
               ./tools/ci/test_controller.sh ${{ matrix.module }}
 
+      - name: "Cleanup build artifacts"
+        working-directory: ${{ env.CHECKOUT_DIR }}
+        run: find ${{ steps.test-run.outputs.debug-files-output-dir }} -name '*sys*[:<>|*?]* -exec rm {} \;
+
       - name: "Publish Unit Test Results"
         uses: EnricoMi/publish-unit-test-result-action@v1
         if: ${{ always() }}
