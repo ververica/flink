@@ -65,6 +65,13 @@ jobs:
         with:
           path: ${{ env.CHECKOUT_DIR }}
 
+      # see https://github.com/actions/setup-java#supported-distributions
+      - name: "Install JDK ${{ inputs.jdk }}"
+        uses: actions/setup-java@v2
+        with:
+          distribution: "temurin"
+          java-version: ${{ inputs.jdk }}
+
       - name: "Install Maven 3.2.5"
         uses: stCarolas/setup-maven@v4.2
         with:
@@ -85,13 +92,6 @@ jobs:
           path: ${{ env.MAVEN_REPOSITORY_DIR }}
           key: maven-${{ runner.os }}-${{ hashFiles('**/pom.xml', '!**/target/**') }}
           restore-keys: maven-${{ runner.os }}
-
-      # see https://github.com/actions/setup-java#supported-distributions
-      - name: "Install JDK ${{ inputs.jdk }}"
-        uses: actions/setup-java@v2
-        with:
-          distribution: "temurin"
-          java-version: ${{ inputs.jdk }}
 
       - name: "Compile Flink"
         working-directory: ${{ env.CHECKOUT_DIR }}
@@ -135,6 +135,13 @@ jobs:
         with:
           path: ${{ env.CHECKOUT_DIR }}
 
+      # see https://github.com/actions/setup-java#supported-distributions
+      - name: "Set JDK ${{ inputs.jdk }}"
+        uses: actions/setup-java@v2
+        with:
+          distribution: "temurin"
+          java-version: ${{ inputs.jdk }}
+
       - name: "Install Maven 3.2.5"
         uses: stCarolas/setup-maven@v4.2
         with:
@@ -148,12 +155,13 @@ jobs:
           wget http://security.ubuntu.com/ubuntu/pool/main/o/openssl1.0/libssl1.0.0_1.0.2n-1ubuntu5.7_amd64.deb
           sudo apt install ./libssl1.0.0_1.0.2n-1ubuntu5.7_amd64.deb
 
-      # see https://github.com/actions/setup-java#supported-distributions
-      - name: "Set JDK ${{ inputs.jdk }}"
-        uses: actions/setup-java@v2
-        with:
-          distribution: "temurin"
-          java-version: ${{ inputs.jdk }}
+      - name: "Free up disk space"
+        working-directory: ${{ env.CHECKOUT_DIR }}
+        run: ./tools/azure-pipelines/free_disk_space.sh
+
+      - name: "Set coredump pattern"
+        working-directory: ${{ env.CHECKOUT_DIR }}
+        run: sudo sysctl -w kernel.core_pattern=core.%p
 
       # download artifact from compile stage
       - name: "Download pipeline artifact"
@@ -187,10 +195,6 @@ jobs:
         if: ${{ !cancelled() && !steps.docker-cache.cache.hit }}
         working-directory: ${{ env.CHECKOUT_DIR }}
         run: ./tools/azure-pipelines/cache_docker_images.sh -f ${{ env.DOCKER_IMAGES_CACHE_FOLDER }} load
-
-      - name: "Set coredump pattern"
-        working-directory: ${{ env.CHECKOUT_DIR }}
-        run: sudo sysctl -w kernel.core_pattern=core.%p
 
       - name: "Test - ${{ matrix.module }}"
         id: test-run
@@ -277,6 +281,30 @@ jobs:
         with:
           path: ${{ env.CHECKOUT_DIR }}
 
+      # see https://github.com/actions/setup-java#supported-distributions
+      - name: "Set JDK ${{ inputs.jdk }}"
+        uses: actions/setup-java@v2
+        with:
+          distribution: "temurin"
+          java-version: ${{ inputs.jdk }}
+
+      - name: "Install Maven 3.2.5"
+        uses: stCarolas/setup-maven@v4.2
+        with:
+          maven-version: 3.2.5
+
+      - name: "Install required dependencies bc and libapr1"
+        run: sudo apt-get install -y bc libapr1
+
+      - name: "Install libssl1.0.0 for netty tcnative"
+        run: |
+          wget http://security.ubuntu.com/ubuntu/pool/main/o/openssl1.0/libssl1.0.0_1.0.2n-1ubuntu5.7_amd64.deb
+          sudo apt install ./libssl1.0.0_1.0.2n-1ubuntu5.7_amd64.deb
+
+      - name: "Free up disk space"
+        working-directory: ${{ env.CHECKOUT_DIR }}
+        run: ./tools/azure-pipelines/free_disk_space.sh
+
       # the cache task does not create directories on a cache miss, and can later fail when trying to tar the directory if the test haven't created it
       # this may for example happen if a given directory is only used by a subset of tests, which are run in a different 'group'
       - name: "Create cache directories"
@@ -317,30 +345,6 @@ jobs:
         working-directory: ${{ env.CHECKOUT_DIR }}
         if: ${{ !cancelled() && !steps.docker-cache.cache.hit }}
         run: ./tools/azure-pipelines/cache_docker_images.sh -f ${{ env.DOCKER_IMAGES_CACHE_FOLDER }} load
-
-      # see https://github.com/actions/setup-java#supported-distributions
-      - name: "Set JDK ${{ inputs.jdk }}"
-        uses: actions/setup-java@v2
-        with:
-          distribution: "temurin"
-          java-version: ${{ inputs.jdk }}
-
-      - name: "Install Maven 3.2.5"
-        uses: stCarolas/setup-maven@v4.2
-        with:
-          maven-version: 3.2.5
-
-      - name: "Install required dependencies bc and libapr1"
-        run: sudo apt-get install -y bc libapr1
-
-      - name: "Install libssl1.0.0 for netty tcnative"
-        run: |
-          wget http://security.ubuntu.com/ubuntu/pool/main/o/openssl1.0/libssl1.0.0_1.0.2n-1ubuntu5.7_amd64.deb
-          sudo apt install ./libssl1.0.0_1.0.2n-1ubuntu5.7_amd64.deb
-
-      - name: "Free up disk space"
-        working-directory: ${{ env.CHECKOUT_DIR }}
-        run: ./tools/azure-pipelines/free_disk_space.sh
 
       - name: "Build Flink"
         working-directory: ${{ env.CHECKOUT_DIR }}
