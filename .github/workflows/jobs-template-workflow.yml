@@ -115,16 +115,25 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        module:
-          - core
-          - python
-          - libraries
-          - table
-          - connectors
-          - kafka/gelly
-          - tests
-          - misc
-          - finegrained_resource_management
+        include:
+          - module: core
+            stringified-module-name: core
+          - module: python
+            stringified-module-name: python
+          - module: libraries
+            stringified-module-name: libraries
+          - module: table
+            stringified-module-name: table
+          - module: connectors
+            stringified-module-name: connectors
+          - module: kafka/gelly
+            stringified-module-name: kafka-gelly
+          - module: tests
+            stringified-module-name: tests
+          - module: misc
+            stringified-module-name: misc
+          - module: finegrained_resource_management
+            stringified-module-name: finegrained_resource_management
 
     steps:
       - name: "Flink Checkout"
@@ -212,10 +221,7 @@ jobs:
 
       - name: "Post-process build artifacts"
         working-directory: ${{ env.CHECKOUT_DIR }}
-        run: |
-          find ${{ steps.test-run.outputs.debug-files-output-dir }} -type f
-          find ${{ steps.test-run.outputs.debug-files-output-dir }} -type f -exec rename 's/[:<>|*?]/-/' {} \;
-          find ${{ steps.test-run.outputs.debug-files-output-dir }} -type f
+        run: find ${{ steps.test-run.outputs.debug-files-output-dir }} -type f -exec rename 's/[:<>|*?]/-/' {} \;
 
       - name: "Publish Unit Test Results"
         uses: EnricoMi/publish-unit-test-result-action@v1
@@ -228,7 +234,7 @@ jobs:
         uses: actions/upload-artifact@v2
         if: ${{ steps.test-run.outputs.debug-files-output-dir }} != ''
         with:
-          name: logs-test-${{ needs.compile.outputs.stringified-workflow-name }}-${{ github.run_number }}-${{ matrix.module }}-${{ steps.test-run.outputs.debug-files-name }}
+          name: logs-test-${{ needs.compile.outputs.stringified-workflow-name }}-${{ github.run_number }}-${{ matrix.stringified-module-name }}-${{ steps.test-run.outputs.debug-files-name }}
           path: ${{ steps.test-run.outputs.debug-files-output-dir }}
 
       - name: "Save Docker images to cache"
