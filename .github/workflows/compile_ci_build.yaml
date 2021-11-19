@@ -39,7 +39,8 @@ jobs:
 
       - name: Create TAR of build artifacts
         run: |
-          tar -czf flink.tar.gz /__w/flink/flink/flink-dist/target/flink-*-bin/flink-* /__w/flink/flink/target
+          cd /__w/flink/flink/
+          tar -czf flink.tar.gz flink-dist/target/flink-*-bin/flink-* target
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v2
@@ -70,6 +71,7 @@ jobs:
 
       - name: Unpack TAR of build artifacts
         run: |
+          cd /__w/flink/flink/
           tar -xzf flink.tar.gz
           ls -l -a
           chmod -R u+w target
