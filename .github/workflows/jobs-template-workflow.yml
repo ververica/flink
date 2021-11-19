@@ -303,6 +303,16 @@ jobs:
         working-directory: ${{ env.CHECKOUT_DIR }}
         run: ./tools/azure-pipelines/free_disk_space.sh
 
+      - name: "Download build artifacts from compile job"
+        uses: actions/download-artifact@v2
+        with:
+          name: build-artifacts-${{ inputs.stage_name }}-${{ github.run_number }}
+          path: ${{ env.FLINK_ARTIFACT_DIR }}
+
+      - name: "Unpack build artifact"
+        working-directory: ${{ env.CHECKOUT_DIR }}
+        run: ./tools/azure-pipelines/unpack_build_artifact.sh -f ${{ env.FLINK_ARTIFACT_DIR }}/${{ env.FLINK_ARTIFACT_FILENAME }} -t ${{ env.CHECKOUT_DIR }}
+
       # the cache task does not create directories on a cache miss, and can later fail when trying to tar the directory if the test haven't created it
       # this may for example happen if a given directory is only used by a subset of tests, which are run in a different 'group'
       - name: "Create cache directories"
