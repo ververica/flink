@@ -58,6 +58,7 @@ jobs:
         run: |
           stringified_workflow_name=$(echo "${{ github.workflow }}" | tr -C '[:alnum:]._' '-' |  tr '[:upper:]' '[:lower:]' | sed -e 's/--*/-/g' -e 's/^-*//g' -e 's/-*$//g')
           echo "::set-output name=stringified-workflow-name::${stringified_workflow_name}"
+
       - name: "Flink Checkout"
         uses: actions/checkout@v2
         with:
