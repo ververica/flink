@@ -45,37 +45,37 @@ env:
 
 
 jobs:
-  compile:
-    uses: ververica/flink/.github/workflows/compile-template.yml@hackathon2021b-nico
-    with:
-      stage_name: "ci"
-      environment: 'PROFILE="-Dhadoop.version=2.8.3 -Dinclude_hadoop_aws -Dscala-2.12"'
-      jdk: 8
-      mode: ""
-
-  test:
-    uses: ververica/flink/.github/workflows/test-template.yml@hackathon2021b-nico
-    needs: compile
-    with:
-      stage_name: "ci"
-      environment: 'PROFILE="-Dhadoop.version=2.8.3 -Dinclude_hadoop_aws -Dscala-2.12"'
-      jdk: 8
-      mode: ""
-    secrets:
-      s3_bucket: ${{ secrets.s3_bucket }}
-      s3_access_key: ${{ secrets.s3_access_key }}
-      s3_secret_key: ${{ secrets.s3_secret_key }}
-      glue_schema_access_key: ${{ secrets.glue_schema_access_key }}
-      glue_schema_secret_key: ${{ secrets.glue_schema_secret_key }}
+#  compile:
+#    uses: ververica/flink/.github/workflows/compile-template.yml@hackathon2021b-nico
+#    with:
+#      stage_name: "ci"
+#      environment: 'PROFILE="-Dhadoop.version=2.8.3 -Dinclude_hadoop_aws -Dscala-2.12"'
+#      jdk: 8
+#      mode: ""
+#
+#  test:
+#    uses: ververica/flink/.github/workflows/test-template.yml@hackathon2021b-nico
+#    needs: compile
+#    with:
+#      stage_name: "ci"
+#      environment: 'PROFILE="-Dhadoop.version=2.8.3 -Dinclude_hadoop_aws -Dscala-2.12"'
+#      jdk: 8
+#      mode: ""
+#    secrets:
+#      s3_bucket: ${{ secrets.s3_bucket }}
+#      s3_access_key: ${{ secrets.s3_access_key }}
+#      s3_secret_key: ${{ secrets.s3_secret_key }}
+#      glue_schema_access_key: ${{ secrets.glue_schema_access_key }}
+#      glue_schema_secret_key: ${{ secrets.glue_schema_secret_key }}
 
   e2e-test:
     uses: ververica/flink/.github/workflows/e2e-template.yml@hackathon2021b-nico
-    if: ${{ github.event.inputs.run_end_to_end == 'true' }}
+#    if: ${{ github.event.inputs.run_end_to_end == 'true' }}
     with:
       stage_name: "ci"
       environment: 'PROFILE="-Dhadoop.version=2.8.3 -Dinclude_hadoop_aws -Dscala-2.12"'
       jdk: 8
-      group: ${{ github.event.inputs.e2e_group }}
+      group: 1
     secrets:
       s3_bucket: ${{ secrets.s3_bucket }}
       s3_access_key: ${{ secrets.s3_access_key }}
