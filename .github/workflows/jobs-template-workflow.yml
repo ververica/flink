@@ -30,10 +30,6 @@ on:
         description: "the jdk version to use"
         required: true
         type: number
-      mode:
-        description: "mode of execution. Can be nightly, e2e, release"
-        required: true
-        type: string
     secrets:
       s3_bucket:
         required: true
@@ -57,7 +53,6 @@ jobs:
   compile:
     name: "Compile"
     runs-on: ubuntu-latest
-    if: ${{ success() && inputs.mode != 'e2e' }}
     timeout-minutes: 240
     steps:
       - name: "Flink Checkout"
