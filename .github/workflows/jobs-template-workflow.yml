@@ -165,7 +165,7 @@ jobs:
       - name: "Download build artifacts from compile job"
         uses: actions/download-artifact@v2
         with:
-          name: FlinkCompileArtifact-${{ inputs.stage_name }}
+          name: build-artifacts-${{ inputs.stage_name }}-${{ github.run_number }}
           path: ${{ env.FLINK_ARTIFACT_DIR }}
 
       - name: "Unpack build artifact"
