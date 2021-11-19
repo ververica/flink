@@ -84,7 +84,6 @@ jobs:
       # we have a cache miss on the hash (usually because a pom file has changed),
       # we'll fall back to a key without the pom files.
       - name: "Cache Maven local repo"
-        if: ${{ inputs.test_pool_name != 'Default' }}
         uses: actions/cache@v2
         with:
           path: ${{ env.MAVEN_REPOSITORY_DIR }}
@@ -180,7 +179,6 @@ jobs:
         run: ./tools/azure-pipelines/unpack_build_artifact.sh -f ${{ env.FLINK_ARTIFACT_DIR }}/${{ env.FLINK_ARTIFACT_FILENAME }} -t ${{ env.CHECKOUT_DIR }}
 
       - name: "Load local Maven repository from Cache"
-        if: ${{ inputs.test_pool_name != 'Default' }}
         uses: actions/cache@v2
         with:
           path: ${{ env.MAVEN_REPOSITORY_DIR }}
@@ -189,7 +187,6 @@ jobs:
 
       - name: "Try loading Docker images from Cache"
         id: docker-cache
-        if: ${{ inputs.test_pool_name != 'Default' }}
         uses: actions/cache@v2
         with:
           path: ${{ env.DOCKER_IMAGES_CACHE_FOLDER }}
