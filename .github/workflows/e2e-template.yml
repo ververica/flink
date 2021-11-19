@@ -57,6 +57,8 @@ jobs:
     name: "Check: Doc-only PR"
     runs-on: ubuntu-latest
     steps:
+      - name: "Checks out Flink"
+        uses: actions/checkout@v2
       # Skip e2e test execution if this is a documentation only pull request (master / release builds will still be checked regularly)
       - name: "Check if it's a docs-only PR (i.e. e2e tests can be skipped)"
         id: docs-only-pr-check
