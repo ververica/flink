@@ -40,7 +40,6 @@ env:
 jobs:
   test:
     name: "Test (module: ${{ matrix.module }})"
-    needs: compile
     runs-on: ubuntu-20.04
     if: ${{ success() && inputs.mode != 'e2e' }}
     strategy:

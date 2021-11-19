@@ -55,6 +55,7 @@ jobs:
 
   test:
     uses: ververica/flink/.github/workflows/test-template.yml@hackathon2021b-nico
+    needs: compile
     with:
       stage_name: "ci"
       environment: 'PROFILE="-Dhadoop.version=2.8.3 -Dinclude_hadoop_aws -Dscala-2.12"'
