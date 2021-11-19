@@ -70,8 +70,9 @@ jobs:
 
       - name: Unpack TAR of build artifacts
         run: |
-          ls -lR -l -a
+          ls -l -a
           tar -xzf build-artifacts.tar.gz
+          ls -lR -l -a
 
       - name: Cache local Maven repository
         uses: actions/cache@v2
