@@ -108,7 +108,7 @@ jobs:
       - name: Upload artifacts
         uses: actions/upload-artifact@v2
         with:
-          name: FlinkCompileArtifact-${{ inputs.stage_name }}
+          name: build-artifacts-${{ inputs.stage_name }}-${{ github.run_number }}
           path: ${{ env.FLINK_ARTIFACT_DIR }}/${{ env.FLINK_ARTIFACT_FILENAME }}
 
   test:
@@ -224,7 +224,7 @@ jobs:
         uses: actions/upload-artifact@v2
         if: ${{ steps.test-run.outputs.debug-files-output-dir }} != ''
         with:
-          name: logs-${{ inputs.stage_name }}-${{ steps.test-run.outputs.debug-files-name }}
+          name: logs-test-${{ inputs.stage_name }}-${{ github.run_number }}-${{ matrix.module }}-${{ steps.test-run.outputs.debug-files-name }}
           path: ${{ steps.test-run.outputs.debug-files-output-dir }}
 
       - name: "Save Docker images to cache"
@@ -368,7 +368,7 @@ jobs:
         uses: actions/upload-artifact@v2
         if: ${{ steps.test-run.outputs.debug-files-output-dir }} != ''
         with:
-          name: logs-${{ inputs.stage_name }}-${{ steps.test-run.outputs.debug-files-name }}
+          name: logs-e2e--${{ inputs.stage_name }}-${{ github.run_number }}-${{ matrix.group }}-${{ steps.test-run.outputs.debug-files-name }}
           path: ${{ steps.test-run.outputs.debug-files-output-dir }}
 
       - name: "Save Docker images to cache"
