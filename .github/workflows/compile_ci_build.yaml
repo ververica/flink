@@ -85,8 +85,7 @@ jobs:
       - name: Set permissions correctly
         run: |
           cd /__w/flink/flink/
-          chmod -R ug+w target
-          ls -lR -l -a target
+          chmod -R ogu+x .
 
       - name: Test - core
 #        run: mvn ${{ env.MVN_LOG_OPTIONS }} ${{ env.MVN_COMMON_OPTIONS }} ${{ env.MVN_TEST_OPTIONS }} ${{ env.PROFILE }} -pl ${{ env.MVN_TEST_MODULES }} -am install
