@@ -269,7 +269,7 @@ jobs:
 
   e2e:
     name: "E2E (group ${{ matrix.group }})"
-    needs: e2e-prereq-check
+    needs: [compile, e2e-prereq-check]
     runs-on: ubuntu-20.04
     if: ${{ needs.e2e-prereq-check.outputs.skip-e2e != 'true' }}
     timeout-minutes: 310
