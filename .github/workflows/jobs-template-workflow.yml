@@ -212,7 +212,7 @@ jobs:
 
       - name: "Post-process build artifacts"
         working-directory: ${{ env.CHECKOUT_DIR }}
-        run: \
+        run: |
           find ${{ steps.test-run.outputs.debug-files-output-dir }} -type f
           find ${{ steps.test-run.outputs.debug-files-output-dir }} -type f -exec rename 's/[:<>|*?]/-/' {} \;
           find ${{ steps.test-run.outputs.debug-files-output-dir }} -type f
