@@ -81,10 +81,10 @@ jobs:
       # we do not have to re-download all dependencies from maven central for
       # each build. The hope is that downloading the cache is faster than
       # all dependencies individually.
-      # In this configuration, we use a hash over all committed (not generated) .pom files
-      # as a key for the build cache (CACHE_KEY). If we have a cache miss on the hash
-      # (usually because a pom file has changed), we'll fall back to a key without
-      # the pom files (CACHE_FALLBACK_KEY).
+      # In this configuration, we use a hash over all committed (not generated,
+      # that's why including target) .pom files as a key for the build cache. If
+      # we have a cache miss on the hash (usually because a pom file has changed),
+      # we'll fall back to a key without the pom files.
       - name: "Cache Maven local repo"
         if: ${{ inputs.test_pool_name != 'Default' }}
         uses: actions/cache@v2
@@ -104,8 +104,7 @@ jobs:
         working-directory: ${{ env.CHECKOUT_DIR }}
         run: ./tools/azure-pipelines/create_build_artifact.sh -f ${{ env.FLINK_ARTIFACT_DIR }}/${{ env.FLINK_ARTIFACT_FILENAME }}
 
-      # upload artifacts for next stage
-      - name: "Upload artifacts"
+      - name: "Upload artifacts to make them available in downstream jobs"
         uses: actions/upload-artifact@v2
         with:
           name: build-artifacts-${{ inputs.stage_name }}-${{ github.run_number }}
@@ -163,14 +162,13 @@ jobs:
         working-directory: ${{ env.CHECKOUT_DIR }}
         run: sudo sysctl -w kernel.core_pattern=core.%p
 
-      # download artifact from compile stage
-      - name: "Download pipeline artifact"
+      - name: "Download build artifacts from compile job"
         uses: actions/download-artifact@v2
         with:
           name: FlinkCompileArtifact-${{ inputs.stage_name }}
           path: ${{ env.FLINK_ARTIFACT_DIR }}
 
-      - name: "Unpack Build Artifact"
+      - name: "Unpack build artifact"
         working-directory: ${{ env.CHECKOUT_DIR }}
         run: ./tools/azure-pipelines/unpack_build_artifact.sh -f ${{ env.FLINK_ARTIFACT_DIR }}/${{ env.FLINK_ARTIFACT_FILENAME }} -t ${{ env.CHECKOUT_DIR }}
 
