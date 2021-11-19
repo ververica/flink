@@ -60,12 +60,12 @@ jobs:
     if: ${{ success() && inputs.mode != 'e2e' }}
     timeout-minutes: 240
     steps:
-      - name: "Checks out Flink"
+      - name: "Flink Checkout"
         uses: actions/checkout@v2
         with:
           path: ${{ env.CHECKOUT_DIR }}
 
-      - name: "Set up Maven" # and SSL???
+      - name: "Install Maven 3.2.5"
         uses: stCarolas/setup-maven@v4.2
         with:
           maven-version: 3.2.5
@@ -87,7 +87,7 @@ jobs:
           restore-keys: maven-${{ runner.os }}
 
       # see https://github.com/actions/setup-java#supported-distributions
-      - name: "Set JDK ${{ inputs.jdk }}"
+      - name: "Install JDK ${{ inputs.jdk }}"
         uses: actions/setup-java@v2
         with:
           distribution: "temurin"
@@ -105,7 +105,7 @@ jobs:
         run: ./tools/azure-pipelines/create_build_artifact.sh -f ${{ env.FLINK_ARTIFACT_DIR }}/${{ env.FLINK_ARTIFACT_FILENAME }}
 
       # upload artifacts for next stage
-      - name: Upload artifacts
+      - name: "Upload artifacts"
         uses: actions/upload-artifact@v2
         with:
           name: build-artifacts-${{ inputs.stage_name }}-${{ github.run_number }}
@@ -135,7 +135,7 @@ jobs:
         with:
           path: ${{ env.CHECKOUT_DIR }}
 
-      - name: "Set up Maven" # and SSL???
+      - name: "Install Maven 3.2.5"
         uses: stCarolas/setup-maven@v4.2
         with:
           maven-version: 3.2.5
@@ -162,11 +162,11 @@ jobs:
           name: FlinkCompileArtifact-${{ inputs.stage_name }}
           path: ${{ env.FLINK_ARTIFACT_DIR }}
 
-      - name: "Unpack Build artifact"
+      - name: "Unpack Build Artifact"
         working-directory: ${{ env.CHECKOUT_DIR }}
         run: ./tools/azure-pipelines/unpack_build_artifact.sh -f ${{ env.FLINK_ARTIFACT_DIR }}/${{ env.FLINK_ARTIFACT_FILENAME }} -t ${{ env.CHECKOUT_DIR }}
 
-      - name: "Cache Maven local repo"
+      - name: "Load local Maven repository from Cache"
         if: ${{ inputs.test_pool_name != 'Default' }}
         uses: actions/cache@v2
         with:
@@ -174,7 +174,7 @@ jobs:
           key: maven-${{ runner.os }}-${{ hashFiles('**/pom.xml', '!**/target/**') }}
           restore-keys: maven-${{ runner.os }}
 
-      - name: "Cache Docker images"
+      - name: "Try loading Docker images from Cache"
         id: docker-cache
         if: ${{ inputs.test_pool_name != 'Default' }}
         uses: actions/cache@v2
@@ -210,7 +210,7 @@ jobs:
               -t 240 \
               ./tools/ci/test_controller.sh ${{ matrix.module }}
 
-      - name: "Cleanup build artifacts"
+      - name: "Post-process build artifacts"
         working-directory: ${{ env.CHECKOUT_DIR }}
         run: find ${{ steps.test-run.outputs.debug-files-output-dir }} -name '*sys*[:<>|*?]*' -exec rm {} \;
 
@@ -220,7 +220,7 @@ jobs:
         with:
           files: '**/TEST*.xml'
 
-      - name: "Upload artifacts"
+      - name: "Upload build artifacts"
         uses: actions/upload-artifact@v2
         if: ${{ steps.test-run.outputs.debug-files-output-dir }} != ''
         with:
@@ -286,34 +286,34 @@ jobs:
           mkdir -p ${{ env.E2E_TARBALL_CACHE }}
           mkdir -p ${{ env.DOCKER_IMAGES_CACHE_FOLDER }}
 
-      - name: "Cache Maven local repo"
+      - name: "Load local Maven repository from Cache"
         uses: actions/cache@v2
         with:
           path: ${{ env.MAVEN_REPOSITORY_DIR }}
           key: maven-${{ runner.os }}-${{ hashFiles('**/pom.xml', '!**/target/**') }}
           restore-keys: maven-${{ runner.os }}
 
-      - name: "Cache E2E files"
+      - name: "Load E2E files from Cache"
         uses: actions/cache@v2
         with:
           path: ${{ env.E2E_CACHE_FOLDER }}
           key: e2e-cache-${{ matrix.group }}-${{ hashFiles('**/flink-end-to-end-tests/**/*.java', '!**/avro/**') }}
 
-      - name: "Cache E2E artifacts"
+      - name: "Load E2E artifacts from Cache"
         uses: actions/cache@v2
         with:
           path: ${{ env.E2E_TARBALL_CACHE }}
           key: e2e-artifact-cache-${{ matrix.group }}-${{ hashFiles('**/flink-end-to-end-tests/**/*.sh') }}
           restore-keys: e2e-artifact-cache-${{ matrix.group }}
 
-      - name: "Cache Docker images"
+      - name: "Try loading Docker images from Cache"
         id: docker-cache
         uses: actions/cache@v2
         with:
           path: ${{ env.DOCKER_IMAGES_CACHE_FOLDER }}
           key: e2e-${{ matrix.group }}-docker-${{ runner.os }}-${{ hashFiles('**/cache_docker_images.sh', '**/flink-test-utils-parent/**/DockerImageVersions.java') }}
 
-      - name: "Load Docker images if not present in cache, yet"
+      - name: "Load Docker images if not present in Cache, yet"
         working-directory: ${{ env.CHECKOUT_DIR }}
         if: ${{ !cancelled() && !steps.docker-cache.cache.hit }}
         run: ./tools/azure-pipelines/cache_docker_images.sh -f ${{ env.DOCKER_IMAGES_CACHE_FOLDER }} load
@@ -325,7 +325,7 @@ jobs:
           distribution: "temurin"
           java-version: ${{ inputs.jdk }}
 
-      - name: "Set up Maven" #and SSL??? This replaces the container from the original yml
+      - name: "Install Maven 3.2.5"
         uses: stCarolas/setup-maven@v4.2
         with:
           maven-version: 3.2.5
@@ -368,10 +368,10 @@ jobs:
         uses: actions/upload-artifact@v2
         if: ${{ steps.test-run.outputs.debug-files-output-dir }} != ''
         with:
-          name: logs-e2e--${{ inputs.stage_name }}-${{ github.run_number }}-${{ matrix.group }}-${{ steps.test-run.outputs.debug-files-name }}
+          name: logs-e2e-${{ inputs.stage_name }}-${{ github.run_number }}-${{ matrix.group }}-${{ steps.test-run.outputs.debug-files-name }}
           path: ${{ steps.test-run.outputs.debug-files-output-dir }}
 
-      - name: "Save Docker images to cache"
+      - name: "Save Docker images to Cache"
         working-directory: ${{ env.CHECKOUT_DIR }}
         if: ${{ !cancelled() && (failure() || !steps.docker-cache.cache.hit) }}
         run: ./tools/azure-pipelines/cache_docker_images.sh -f ${{ env.DOCKER_IMAGES_CACHE_FOLDER }} save
