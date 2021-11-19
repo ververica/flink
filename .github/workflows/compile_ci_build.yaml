@@ -39,13 +39,13 @@ jobs:
 
       - name: Create TAR of build artifacts
         run: |
-          tar -czf build-artifacts.tar.gz /__w/flink/flink/flink-dist/target/flink-*-bin/flink-* /__w/flink/flink/target
+          tar -czf flink.tar.gz /__w/flink/flink/flink-dist/target/flink-*-bin/flink-* /__w/flink/flink/target
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v2
         with:
           name: build-artifacts
-          path: /__w/flink/flink/build-artifacts.tar.gz
+          path: /__w/flink/flink/flink.tar.gz
           retention-days: 1
 
   test_ci_core:
@@ -70,9 +70,8 @@ jobs:
 
       - name: Unpack TAR of build artifacts
         run: |
-          ls -l -a
-          tar -xzf build-artifacts.tar.gz
-          ls -lR -l -a
+          tar -xzf flink.tar.gz
+          chmod -R u+w /__w/flink/flink/target
 
       - name: Cache local Maven repository
         uses: actions/cache@v2
