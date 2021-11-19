@@ -51,7 +51,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 240
     outputs:
-      stringified-workflow-name: ${{ steps.workflow-prep-step.stringified-workflow-name }}
+      stringified-workflow-name: ${{ steps.workflow-prep-step.outputs.stringified-workflow-name }}
     steps:
       - name: "Stringify workflow name"
         id: workflow-prep-step
@@ -105,7 +105,7 @@ jobs:
       - name: "Upload artifacts to make them available in downstream jobs"
         uses: actions/upload-artifact@v2
         with:
-          name: build-artifacts-${{ steps.workflow-prep-step.stringified-workflow-name }}-${{ github.run_number }}
+          name: build-artifacts-${{ steps.workflow-prep-step.outputs.stringified-workflow-name }}-${{ github.run_number }}
           path: ${{ env.FLINK_ARTIFACT_DIR }}/${{ env.FLINK_ARTIFACT_FILENAME }}
 
   test:
