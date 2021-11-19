@@ -73,8 +73,6 @@ jobs:
         run: |
           cd /__w/flink/flink/
           tar -xzf flink.tar.gz
-          ls -l -a
-          chmod -R u+w target
 
       - name: Cache local Maven repository
         uses: actions/cache@v2
@@ -83,6 +81,11 @@ jobs:
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
           restore-keys: |
             ${{ runner.os }}-maven-
+
+      - name: Set permissions correctly
+        run: |
+          cd /__w/flink/flink/
+          chmod -R u+w target
 
       - name: Test - core
 #        run: mvn ${{ env.MVN_LOG_OPTIONS }} ${{ env.MVN_COMMON_OPTIONS }} ${{ env.MVN_TEST_OPTIONS }} ${{ env.PROFILE }} -pl ${{ env.MVN_TEST_MODULES }} -am install
