@@ -71,7 +71,8 @@ jobs:
       - name: Unpack TAR of build artifacts
         run: |
           tar -xzf flink.tar.gz
-          chmod -R u+w /__w/flink/flink/target
+          ls -l -a
+          chmod -R u+w target
 
       - name: Cache local Maven repository
         uses: actions/cache@v2
