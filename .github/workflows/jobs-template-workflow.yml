@@ -147,7 +147,7 @@ jobs:
           maven-version: 3.2.5
 
       - name: "Install required dependencies bc and libapr1"
-        run: sudo apt-get install -y bc libapr1
+        run: sudo apt-get install -y bc libapr1 rename
 
       - name: "Install libssl1.0.0 for netty tcnative"
         run: |
@@ -214,7 +214,7 @@ jobs:
 
       - name: "Post-process build artifacts"
         working-directory: ${{ env.CHECKOUT_DIR }}
-        run: find ${{ steps.test-run.outputs.debug-files-output-dir }} -name '*sys*[:<>|*?]*' -exec rm {} \;
+        run: find ${{ steps.test-run.outputs.debug-files-output-dir }} -type f -exec rename 's/[:<>|*?]/-/' {} \;
 
       - name: "Publish Unit Test Results"
         uses: EnricoMi/publish-unit-test-result-action@v1
