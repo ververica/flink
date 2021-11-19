@@ -72,7 +72,7 @@ jobs:
     name: "E2E Test Run"
     runs-on: ubuntu-latest
     needs: e2e-prereq-check
-    if: ${{ needs.e2e-prereq-check.outputs.skip-e2e != "true" }}
+    if: ${{ needs.e2e-prereq-check.outputs.skip-e2e != true }}
     timeout-minutes: 310
     steps:
         - name: "Checks out Flink"
