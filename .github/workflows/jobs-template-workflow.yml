@@ -18,10 +18,6 @@ name: "Build and Test Apache Flink"
 on:
   workflow_call:
     inputs:
-      stage_name:
-        description: "defines a unique identifier for all jobs in a stage (in case the jobs are added multiple times to a stage)"
-        required: true
-        type: string
       environment:
         description: "defines environment variables for downstream scripts"
         required: true
@@ -54,7 +50,14 @@ jobs:
     name: "Compile"
     runs-on: ubuntu-latest
     timeout-minutes: 240
+    outputs:
+      stringified-workflow-name: ${{ steps.workflow-prep-step.stringified-workflow-name }}
     steps:
+      - name: "Stringify workflow name"
+        id: workflow-prep-step
+        run: |
+          stringified_workflow_name=$(echo ${{ github.workflow }} | tr -C '[:alnum:]._' '-' |  tr '[:upper:]' '[:lower:]' | sed -e 's/--*/-/g' -e 's/^-*//g' -e 's/-*$//g')
+          echo "::set-output name=stringified-workflow-name::${stringified_workflow_name}"
       - name: "Flink Checkout"
         uses: actions/checkout@v2
         with:
@@ -102,7 +105,7 @@ jobs:
       - name: "Upload artifacts to make them available in downstream jobs"
         uses: actions/upload-artifact@v2
         with:
-          name: build-artifacts-${{ inputs.stage_name }}-${{ github.run_number }}
+          name: build-artifacts-${{ steps.workflow-prep-step.stringified-workflow-name }}-${{ github.run_number }}
           path: ${{ env.FLINK_ARTIFACT_DIR }}/${{ env.FLINK_ARTIFACT_FILENAME }}
 
   test:
@@ -160,7 +163,7 @@ jobs:
       - name: "Download build artifacts from compile job"
         uses: actions/download-artifact@v2
         with:
-          name: build-artifacts-${{ inputs.stage_name }}-${{ github.run_number }}
+          name: build-artifacts-${{ needs.compile.outputs.stringified-workflow-name }}-${{ github.run_number }}
           path: ${{ env.FLINK_ARTIFACT_DIR }}
 
       - name: "Unpack build artifact"
@@ -222,7 +225,7 @@ jobs:
         uses: actions/upload-artifact@v2
         if: ${{ steps.test-run.outputs.debug-files-output-dir }} != ''
         with:
-          name: logs-test-${{ inputs.stage_name }}-${{ github.run_number }}-${{ matrix.module }}-${{ steps.test-run.outputs.debug-files-name }}
+          name: logs-test-${{ needs.compile.outputs.stringified-workflow-name }}-${{ github.run_number }}-${{ matrix.module }}-${{ steps.test-run.outputs.debug-files-name }}
           path: ${{ steps.test-run.outputs.debug-files-output-dir }}
 
       - name: "Save Docker images to cache"
@@ -302,7 +305,7 @@ jobs:
       - name: "Download build artifacts from compile job"
         uses: actions/download-artifact@v2
         with:
-          name: build-artifacts-${{ inputs.stage_name }}-${{ github.run_number }}
+          name: build-artifacts-${{ needs.compile.outputs.stringified-workflow-name }}-${{ github.run_number }}
           path: ${{ env.FLINK_ARTIFACT_DIR }}
 
       - name: "Unpack build artifact"
@@ -376,7 +379,7 @@ jobs:
         uses: actions/upload-artifact@v2
         if: ${{ steps.test-run.outputs.debug-files-output-dir }} != ''
         with:
-          name: logs-e2e-${{ inputs.stage_name }}-${{ github.run_number }}-${{ matrix.group }}-${{ steps.test-run.outputs.debug-files-name }}
+          name: logs-e2e-${{ needs.compile.outputs.stringified-workflow-name }}-${{ github.run_number }}-${{ matrix.group }}-${{ steps.test-run.outputs.debug-files-name }}
           path: ${{ steps.test-run.outputs.debug-files-output-dir }}
 
       - name: "Save Docker images to Cache"
