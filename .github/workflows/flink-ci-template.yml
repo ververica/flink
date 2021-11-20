@@ -43,6 +43,8 @@ env:
   FLINK_ARTIFACT_FILENAME: flink_artifacts.tar.gz
   MAVEN_REPOSITORY_DIR: ${{ github.workspace }}/.m2/repository
   DOCKER_IMAGES_CACHE_FOLDER: ${{ github.workspace }}/.docker-cache
+  # The checkout directory needs to be changed for the Composite Github action usages below as
+  # well, if this env variable is modified
   CHECKOUT_DIR: ${{ github.workspace }}/flink-checkout
 
 jobs:
@@ -135,29 +137,14 @@ jobs:
         with:
           path: ${{ env.CHECKOUT_DIR }}
 
-      # see https://github.com/actions/setup-java#supported-distributions
-      - name: "Set JDK ${{ inputs.jdk }}"
-        uses: actions/setup-java@v2
+      - name: "Worker Setup"
+        uses: ./flink-checkout/.github/actions/worker-setup
         with:
-          distribution: "temurin"
-          java-version: ${{ inputs.jdk }}
-
-      - name: "Install Maven 3.2.5"
-        uses: stCarolas/setup-maven@v4.2
-        with:
-          maven-version: 3.2.5
-
-      - name: "Install required dependencies bc and libapr1"
-        run: sudo apt-get install -y bc libapr1 rename
-
-      - name: "Install libssl1.0.0 for netty tcnative"
-        run: |
-          wget http://security.ubuntu.com/ubuntu/pool/main/o/openssl1.0/libssl1.0.0_1.0.2n-1ubuntu5.7_amd64.deb
-          sudo apt install ./libssl1.0.0_1.0.2n-1ubuntu5.7_amd64.deb
-
-      - name: "Free up disk space"
-        working-directory: ${{ env.CHECKOUT_DIR }}
-        run: ./tools/azure-pipelines/free_disk_space.sh
+          flink-checkout-dir: ${{ env.CHECKOUT_DIR }}
+          jdk-version: ${{ inputs.jdk }}
+          ssl-enabled: true
+          initial-disk-cleanup: true
+          additional-packages: "rename"
 
       - name: "Set coredump pattern"
         working-directory: ${{ env.CHECKOUT_DIR }}
@@ -279,29 +266,13 @@ jobs:
         with:
           path: ${{ env.CHECKOUT_DIR }}
 
-      # see https://github.com/actions/setup-java#supported-distributions
-      - name: "Set JDK ${{ inputs.jdk }}"
-        uses: actions/setup-java@v2
+      - name: "Worker Setup"
+        uses: ./flink-checkout/.github/actions/worker-setup
         with:
-          distribution: "temurin"
-          java-version: ${{ inputs.jdk }}
-
-      - name: "Install Maven 3.2.5"
-        uses: stCarolas/setup-maven@v4.2
-        with:
-          maven-version: 3.2.5
-
-      - name: "Install required dependencies bc and libapr1"
-        run: sudo apt-get install -y bc libapr1
-
-      - name: "Install libssl1.0.0 for netty tcnative"
-        run: |
-          wget http://security.ubuntu.com/ubuntu/pool/main/o/openssl1.0/libssl1.0.0_1.0.2n-1ubuntu5.7_amd64.deb
-          sudo apt install ./libssl1.0.0_1.0.2n-1ubuntu5.7_amd64.deb
-
-      - name: "Free up disk space"
-        working-directory: ${{ env.CHECKOUT_DIR }}
-        run: ./tools/azure-pipelines/free_disk_space.sh
+          flink-checkout-dir: ${{ env.CHECKOUT_DIR }}
+          jdk-version: ${{ inputs.jdk }}
+          ssl-enabled: true
+          initial-disk-cleanup: true
 
       - name: "Download build artifacts from compile job"
         uses: actions/download-artifact@v2
