@@ -26,6 +26,11 @@ on:
         description: "the jdk version to use"
         required: true
         type: number
+      checkout-dir:
+        description: "the sub-folder of the Flink checkout"
+        required: true
+        default: "flink-checkout"
+        type: string
     secrets:
       s3_bucket:
         required: true
@@ -43,7 +48,7 @@ env:
   FLINK_ARTIFACT_FILENAME: flink_artifacts.tar.gz
   MAVEN_REPOSITORY_DIR: ${{ github.workspace }}/.m2/repository
   DOCKER_IMAGES_CACHE_FOLDER: ${{ github.workspace }}/.docker-cache
-  CHECKOUT_DIR: ${{ github.workspace }}/flink-checkout
+  CHECKOUT_DIR: ${{ github.workspace }}/${{ inputs.checkout-dir }}
 
 jobs:
   compile:
@@ -64,17 +69,11 @@ jobs:
         with:
           path: ${{ env.CHECKOUT_DIR }}
 
-      # see https://github.com/actions/setup-java#supported-distributions
-      - name: "Install JDK ${{ inputs.jdk }}"
-        uses: actions/setup-java@v2
+      - name: "Worker Setup"
+        uses: ./${{ inputs.checkout-dir }}/.github/actions/worker-setup
         with:
-          distribution: "temurin"
-          java-version: ${{ inputs.jdk }}
-
-      - name: "Install Maven 3.2.5"
-        uses: stCarolas/setup-maven@v4.2
-        with:
-          maven-version: 3.2.5
+          flink-checkout-dir: ${{ env.CHECKOUT_DIR }}
+          jdk-version: ${{ inputs.jdk }}
 
       # The cache task is persisting the .m2 directory between builds, so that
       # we do not have to re-download all dependencies from maven central for
