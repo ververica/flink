@@ -22,7 +22,7 @@ on:
         description: "defines environment variables for downstream scripts"
         required: true
         type: string
-      jdk:
+      jdk-version:
         description: "the jdk version to use"
         required: true
         type: number
@@ -70,7 +70,7 @@ jobs:
         uses: ./flink-checkout/.github/actions/worker-setup
         with:
           flink-checkout-dir: ${{ env.CHECKOUT_DIR }}
-          jdk-version: ${{ inputs.jdk }}
+          jdk-version: ${{ inputs.jdk-version }}
 
       # The cache task is persisting the .m2 directory between builds, so that
       # we do not have to re-download all dependencies from maven central for
@@ -141,7 +141,7 @@ jobs:
         uses: ./flink-checkout/.github/actions/worker-setup
         with:
           flink-checkout-dir: ${{ env.CHECKOUT_DIR }}
-          jdk-version: ${{ inputs.jdk }}
+          jdk-version: ${{ inputs.jdk-version }}
           ssl-enabled: true
           initial-disk-cleanup: true
           additional-packages: "rename"
@@ -270,7 +270,7 @@ jobs:
         uses: ./flink-checkout/.github/actions/worker-setup
         with:
           flink-checkout-dir: ${{ env.CHECKOUT_DIR }}
-          jdk-version: ${{ inputs.jdk }}
+          jdk-version: ${{ inputs.jdk-version }}
           ssl-enabled: true
           initial-disk-cleanup: true
 
