@@ -26,7 +26,7 @@ runs:
   using: "composite"
   steps:
     - name: "Free up disk space"
-      if: ${{ inputs.initial-disk-cleanup == "true" }}
+      if: inputs.initial-disk-cleanup == 'true'
       working-directory: ${{ inputs.flink-checkout-folder }}
       shell: bash
       run: ./tools/azure-pipelines/free_disk_space.sh
@@ -48,7 +48,7 @@ runs:
       run: sudo apt-get install -y bc libapr1 ${{ inputs.additional-packages }}
 
     - name: "Install libssl1.0.0 for netty tcnative"
-      if: ${{ inputs.ssl-enabled == "true" }}
+      if: inputs.ssl-enabled == 'true'
       shell: bash
       run: |
         wget http://security.ubuntu.com/ubuntu/pool/main/o/openssl1.0/libssl1.0.0_1.0.2n-1ubuntu5.7_amd64.deb
