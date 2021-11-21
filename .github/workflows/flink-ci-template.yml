@@ -69,7 +69,7 @@ jobs:
       - name: "Worker Setup"
         uses: ./flink-checkout/.github/actions/worker-setup
         with:
-          flink-checkout-dir: ${{ env.CHECKOUT_DIR }}
+          flink-checkout-folder: ${{ env.CHECKOUT_DIR }}
           jdk-version: ${{ inputs.jdk-version }}
 
       # The cache task is persisting the .m2 directory between builds, so that
@@ -140,7 +140,7 @@ jobs:
       - name: "Worker Setup"
         uses: ./flink-checkout/.github/actions/worker-setup
         with:
-          flink-checkout-dir: ${{ env.CHECKOUT_DIR }}
+          flink-checkout-folder: ${{ env.CHECKOUT_DIR }}
           jdk-version: ${{ inputs.jdk-version }}
           ssl-enabled: true
           initial-disk-cleanup: true
@@ -269,7 +269,7 @@ jobs:
       - name: "Worker Setup"
         uses: ./flink-checkout/.github/actions/worker-setup
         with:
-          flink-checkout-dir: ${{ env.CHECKOUT_DIR }}
+          flink-checkout-folder: ${{ env.CHECKOUT_DIR }}
           jdk-version: ${{ inputs.jdk-version }}
           ssl-enabled: true
           initial-disk-cleanup: true
