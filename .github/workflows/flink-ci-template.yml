@@ -104,153 +104,152 @@ jobs:
           name: build-artifacts-${{ steps.workflow-prep-step.outputs.stringified-workflow-name }}-${{ github.run_number }}
           path: ${{ env.FLINK_ARTIFACT_DIR }}/${{ env.FLINK_ARTIFACT_FILENAME }}
 
-  test:
-    name: "Test (module: ${{ matrix.module }})"
-    needs: compile
-    runs-on: ubuntu-20.04
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - module: core
-            stringified-module-name: core
-          - module: python
-            stringified-module-name: python
-          - module: libraries
-            stringified-module-name: libraries
-          - module: table
-            stringified-module-name: table
-          - module: connectors
-            stringified-module-name: connectors
-          - module: kafka/gelly
-            stringified-module-name: kafka-gelly
-          - module: tests
-            stringified-module-name: tests
-          - module: misc
-            stringified-module-name: misc
-          - module: finegrained_resource_management
-            stringified-module-name: finegrained_resource_management
+#  test:
+#    name: "Test (module: ${{ matrix.module }})"
+#    needs: compile
+#    runs-on: ubuntu-20.04
+#    strategy:
+#      fail-fast: false
+#      matrix:
+#        include:
+#          - module: core
+#            stringified-module-name: core
+#          - module: python
+#            stringified-module-name: python
+#          - module: libraries
+#            stringified-module-name: libraries
+#          - module: table
+#            stringified-module-name: table
+#          - module: connectors
+#            stringified-module-name: connectors
+#          - module: kafka/gelly
+#            stringified-module-name: kafka-gelly
+#          - module: tests
+#            stringified-module-name: tests
+#          - module: misc
+#            stringified-module-name: misc
+#          - module: finegrained_resource_management
+#            stringified-module-name: finegrained_resource_management
+#
+#    steps:
+#      - name: "Flink Checkout"
+#        uses: actions/checkout@v2
+#        with:
+#          path: ${{ env.CHECKOUT_DIR }}
+#
+#      - name: "Worker Setup"
+#        uses: ./flink-checkout/.github/actions/worker-setup
+#        with:
+#          flink-checkout-folder: ${{ env.CHECKOUT_DIR }}
+#          jdk-version: ${{ inputs.jdk-version }}
+#          ssl-enabled: true
+#          initial-disk-cleanup: true
+#          additional-packages: "rename"
+#
+#      - name: "Set coredump pattern"
+#        working-directory: ${{ env.CHECKOUT_DIR }}
+#        run: sudo sysctl -w kernel.core_pattern=core.%p
+#
+#      - name: "Download build artifacts from compile job"
+#        uses: actions/download-artifact@v2
+#        with:
+#          name: build-artifacts-${{ needs.compile.outputs.stringified-workflow-name }}-${{ github.run_number }}
+#          path: ${{ env.FLINK_ARTIFACT_DIR }}
+#
+#      - name: "Unpack build artifact"
+#        working-directory: ${{ env.CHECKOUT_DIR }}
+#        run: ./tools/azure-pipelines/unpack_build_artifact.sh -f ${{ env.FLINK_ARTIFACT_DIR }}/${{ env.FLINK_ARTIFACT_FILENAME }} -t ${{ env.CHECKOUT_DIR }}
+#
+#      - name: "Load local Maven repository from Cache"
+#        uses: actions/cache@v2
+#        with:
+#          path: ${{ env.MAVEN_REPOSITORY_DIR }}
+#          key: maven-${{ runner.os }}-${{ hashFiles('**/pom.xml', '!**/target/**') }}
+#          restore-keys: maven-${{ runner.os }}
+#
+#      - name: "Try loading Docker images from Cache"
+#        id: docker-cache
+#        uses: actions/cache@v2
+#        with:
+#          path: ${{ env.DOCKER_IMAGES_CACHE_FOLDER }}
+#          key: ${{ matrix.module }}-docker-${{ runner.os }}-${{ hashFiles('**/cache_docker_images.sh', '**/flink-test-utils-parent/**/DockerImageVersions.java') }}
+#          restore-keys: ${{ matrix.module }}-docker-${{ runner.os }}
+#
+#      - name: "Load Docker images if not present in cache, yet"
+#        if: ${{ !cancelled() && !steps.docker-cache.cache.hit }}
+#        working-directory: ${{ env.CHECKOUT_DIR }}
+#        run: ./tools/azure-pipelines/cache_docker_images.sh -f ${{ env.DOCKER_IMAGES_CACHE_FOLDER }} load
+#
+#      - name: "Test - ${{ matrix.module }}"
+#        id: test-run
+#        working-directory: ${{ env.CHECKOUT_DIR }}
+#        env:
+#          MAVEN_OPTS: " -Dmaven.repo.local=${{ env.MAVEN_REPOSITORY_DIR }}"
+#          IT_CASE_S3_BUCKET: ${{ secrets.s3_bucket }}
+#          IT_CASE_S3_ACCESS_KEY: ${{ secrets.s3_access_key }}
+#          IT_CASE_S3_SECRET_KEY: ${{ secrets.s3_secret_key }}
+#          IT_CASE_GLUE_SCHEMA_ACCESS_KEY: ${{ secrets.glue_schema_access_key }}
+#          IT_CASE_GLUE_SCHEMA_SECRET_KEY: ${{ secrets.glue_schema_secret_key }}
+#        timeout-minutes: 240
+#        run: |
+#          ${{ inputs.environment }} ./tools/azure-pipelines/uploading_watchdog.sh \
+#              -a ${{ github.job }} \
+#              -d ${{ runner.temp }} \
+#              -t 240 \
+#              ./tools/ci/test_controller.sh ${{ matrix.module }}
+#
+#      - name: "Post-process build artifacts"
+#        working-directory: ${{ env.CHECKOUT_DIR }}
+#        run: find ${{ steps.test-run.outputs.debug-files-output-dir }} -type f -exec rename 's/[:<>|*?]/-/' {} \;
+#
+#      - name: "Publish Unit Test Results"
+#        uses: EnricoMi/publish-unit-test-result-action@v1
+#        if: ${{ always() }}
+#        with:
+#          files: "**/TEST*.xml"
+#          check_name: "Unit Test Results (${{ matrix.module }})"
+#
+#      - name: "Upload build artifacts"
+#        uses: actions/upload-artifact@v2
+#        if: ${{ steps.test-run.outputs.debug-files-output-dir }} != ''
+#        with:
+#          name: logs-test-${{ needs.compile.outputs.stringified-workflow-name }}-${{ github.run_number }}-${{ matrix.stringified-module-name }}-${{ steps.test-run.outputs.debug-files-name }}
+#          path: ${{ steps.test-run.outputs.debug-files-output-dir }}
+#
+#      - name: "Save Docker images to cache"
+#        working-directory: ${{ env.CHECKOUT_DIR }}
+#        if: ${{ !cancelled() && (failure() || !steps.docker-cache.cache.hit) }}
+#        run: ./tools/azure-pipelines/cache_docker_images.sh -f ${{ env.DOCKER_IMAGES_CACHE_FOLDER }} save
 
-    steps:
-      - name: "Flink Checkout"
-        uses: actions/checkout@v2
-        with:
-          path: ${{ env.CHECKOUT_DIR }}
-
-      - name: "Worker Setup"
-        uses: ./flink-checkout/.github/actions/worker-setup
-        with:
-          flink-checkout-folder: ${{ env.CHECKOUT_DIR }}
-          jdk-version: ${{ inputs.jdk-version }}
-          ssl-enabled: true
-          initial-disk-cleanup: true
-          additional-packages: "rename"
-
-      - name: "Set coredump pattern"
-        working-directory: ${{ env.CHECKOUT_DIR }}
-        run: sudo sysctl -w kernel.core_pattern=core.%p
-
-      - name: "Download build artifacts from compile job"
-        uses: actions/download-artifact@v2
-        with:
-          name: build-artifacts-${{ needs.compile.outputs.stringified-workflow-name }}-${{ github.run_number }}
-          path: ${{ env.FLINK_ARTIFACT_DIR }}
-
-      - name: "Unpack build artifact"
-        working-directory: ${{ env.CHECKOUT_DIR }}
-        run: ./tools/azure-pipelines/unpack_build_artifact.sh -f ${{ env.FLINK_ARTIFACT_DIR }}/${{ env.FLINK_ARTIFACT_FILENAME }} -t ${{ env.CHECKOUT_DIR }}
-
-      - name: "Load local Maven repository from Cache"
-        uses: actions/cache@v2
-        with:
-          path: ${{ env.MAVEN_REPOSITORY_DIR }}
-          key: maven-${{ runner.os }}-${{ hashFiles('**/pom.xml', '!**/target/**') }}
-          restore-keys: maven-${{ runner.os }}
-
-      - name: "Try loading Docker images from Cache"
-        id: docker-cache
-        uses: actions/cache@v2
-        with:
-          path: ${{ env.DOCKER_IMAGES_CACHE_FOLDER }}
-          key: ${{ matrix.module }}-docker-${{ runner.os }}-${{ hashFiles('**/cache_docker_images.sh', '**/flink-test-utils-parent/**/DockerImageVersions.java') }}
-          restore-keys: ${{ matrix.module }}-docker-${{ runner.os }}
-
-      - name: "Load Docker images if not present in cache, yet"
-        if: ${{ !cancelled() && !steps.docker-cache.cache.hit }}
-        working-directory: ${{ env.CHECKOUT_DIR }}
-        run: ./tools/azure-pipelines/cache_docker_images.sh -f ${{ env.DOCKER_IMAGES_CACHE_FOLDER }} load
-
-      - name: "Test - ${{ matrix.module }}"
-        id: test-run
-        working-directory: ${{ env.CHECKOUT_DIR }}
-        env:
-          MAVEN_OPTS: " -Dmaven.repo.local=${{ env.MAVEN_REPOSITORY_DIR }}"
-          IT_CASE_S3_BUCKET: ${{ secrets.s3_bucket }}
-          IT_CASE_S3_ACCESS_KEY: ${{ secrets.s3_access_key }}
-          IT_CASE_S3_SECRET_KEY: ${{ secrets.s3_secret_key }}
-          IT_CASE_GLUE_SCHEMA_ACCESS_KEY: ${{ secrets.glue_schema_access_key }}
-          IT_CASE_GLUE_SCHEMA_SECRET_KEY: ${{ secrets.glue_schema_secret_key }}
-        timeout-minutes: 240
-        run: |
-          ${{ inputs.environment }} ./tools/azure-pipelines/uploading_watchdog.sh \
-              -a ${{ github.job }} \
-              -d ${{ runner.temp }} \
-              -t 240 \
-              ./tools/ci/test_controller.sh ${{ matrix.module }}
-
-      - name: "Post-process build artifacts"
-        working-directory: ${{ env.CHECKOUT_DIR }}
-        run: find ${{ steps.test-run.outputs.debug-files-output-dir }} -type f -exec rename 's/[:<>|*?]/-/' {} \;
-
-      - name: "Publish Unit Test Results"
-        uses: EnricoMi/publish-unit-test-result-action@v1
-        if: ${{ always() }}
-        with:
-          files: "**/TEST*.xml"
-          check_name: "Unit Test Results (${{ matrix.module }})"
-
-      - name: "Upload build artifacts"
-        uses: actions/upload-artifact@v2
-        if: ${{ steps.test-run.outputs.debug-files-output-dir }} != ''
-        with:
-          name: logs-test-${{ needs.compile.outputs.stringified-workflow-name }}-${{ github.run_number }}-${{ matrix.stringified-module-name }}-${{ steps.test-run.outputs.debug-files-name }}
-          path: ${{ steps.test-run.outputs.debug-files-output-dir }}
-
-      - name: "Save Docker images to cache"
-        working-directory: ${{ env.CHECKOUT_DIR }}
-        if: ${{ !cancelled() && (failure() || !steps.docker-cache.cache.hit) }}
-        run: ./tools/azure-pipelines/cache_docker_images.sh -f ${{ env.DOCKER_IMAGES_CACHE_FOLDER }} save
-
-  e2e-prereq-check:
-    name: "Check: Doc-only PR"
-    needs: compile
-    runs-on: ubuntu-latest
-    outputs:
-      skip-e2e: ${{ steps.docs-only-pr-check.skip-e2e }}
-    steps:
-      - name: "Flink Checkout"
-        uses: actions/checkout@v2
-        with:
-          path: ${{ env.CHECKOUT_DIR }}
-
-      # Skip e2e test execution if this is a documentation only pull request (master / release builds will still be checked regularly)
-      - name: "Check if it's a docs-only PR (i.e. e2e tests can be skipped)"
-        id: docs-only-pr-check
-        working-directory: ${{ env.CHECKOUT_DIR }}
-        run: |
-          source ./tools/azure-pipelines/build_properties.sh
-          if is_docs_only_pullrequest; then
-            echo "This is a documentation-only change. Skipping e2e execution."
-            echo "::set-output name=skip-e2e::true"
-          else
-            echo "This is a regular CI build. Continuing ..."
-          fi
+#  e2e-prereq-check:
+#    name: "Check: Doc-only PR"
+#    needs: compile
+#    runs-on: ubuntu-latest
+#    outputs:
+#      skip-e2e: ${{ steps.docs-only-pr-check.skip-e2e }}
+#    steps:
+#      - name: "Flink Checkout"
+#        uses: actions/checkout@v2
+#        with:
+#          path: ${{ env.CHECKOUT_DIR }}
+#
+#      # Skip e2e test execution if this is a documentation only pull request (master / release builds will still be checked regularly)
+#      - name: "Check if it's a docs-only PR (i.e. e2e tests can be skipped)"
+#        id: docs-only-pr-check
+#        working-directory: ${{ env.CHECKOUT_DIR }}
+#        run: |
+#          source ./tools/azure-pipelines/build_properties.sh
+#          if is_docs_only_pullrequest; then
+#            echo "This is a documentation-only change. Skipping e2e execution."
+#            echo "::set-output name=skip-e2e::true"
+#          else
+#            echo "This is a regular CI build. Continuing ..."
+#          fi
 
   e2e:
     name: "E2E (group ${{ matrix.group }})"
-    needs: [compile, e2e-prereq-check]
+    needs: compile
     runs-on: ubuntu-20.04
-    if: ${{ needs.e2e-prereq-check.outputs.skip-e2e != 'true' }}
     timeout-minutes: 310
     env:
       E2E_CACHE_FOLDER: ${{ github.workspace }}/.e2e-cache
@@ -339,6 +338,7 @@ jobs:
           IT_CASE_S3_SECRET_KEY: ${{ secrets.s3_secret_key }}
           IT_CASE_GLUE_SCHEMA_ACCESS_KEY: ${{ secrets.glue_schema_access_key }}
           IT_CASE_GLUE_SCHEMA_SECRET_KEY: ${{ secrets.glue_schema_secret_key }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.glue_schema_access_key }}
         timeout-minutes: 310
         run: |
           ${{ inputs.environment }} FLINK_DIR=`pwd`/build-target ./tools/azure-pipelines/uploading_watchdog.sh \
