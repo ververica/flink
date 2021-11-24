@@ -339,6 +339,7 @@ jobs:
           IT_CASE_GLUE_SCHEMA_ACCESS_KEY: ${{ secrets.glue_schema_access_key }}
           IT_CASE_GLUE_SCHEMA_SECRET_KEY: ${{ secrets.glue_schema_secret_key }}
           AWS_ACCESS_KEY_ID: ${{ secrets.glue_schema_access_key }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.glue_schema_secret_key }}
         timeout-minutes: 310
         run: |
           ${{ inputs.environment }} FLINK_DIR=`pwd`/build-target ./tools/azure-pipelines/uploading_watchdog.sh \
