@@ -39,6 +39,7 @@ import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.Before;
 import org.junit.ClassRule;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.Timeout;
@@ -59,6 +60,7 @@ import static org.apache.flink.streaming.connectors.kinesis.config.ConsumerConfi
 
 /** End-to-end test for Glue Schema Registry AVRO format using Kinesalite. */
 @Category(value = {TravisGroup1.class})
+@Ignore("see discussion on https://issues.apache.org/jira/browse/FLINK-23389")
 public class GlueSchemaRegistryAvroKinesisITCase extends TestLogger {
     private static final String INPUT_STREAM = "gsr_avro_input_stream";
     private static final String OUTPUT_STREAM = "gsr_avro_output_stream";
