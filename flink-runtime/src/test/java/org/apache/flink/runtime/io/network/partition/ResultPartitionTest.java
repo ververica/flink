@@ -26,6 +26,7 @@ import org.apache.flink.runtime.io.network.NettyShuffleEnvironment;
 import org.apache.flink.runtime.io.network.NettyShuffleEnvironmentBuilder;
 import org.apache.flink.runtime.io.network.api.EndOfData;
 import org.apache.flink.runtime.io.network.api.EndOfPartitionEvent;
+import org.apache.flink.runtime.io.network.api.StopMode;
 import org.apache.flink.runtime.io.network.api.serialization.EventSerializer;
 import org.apache.flink.runtime.io.network.api.writer.ResultPartitionWriter;
 import org.apache.flink.runtime.io.network.buffer.Buffer;
@@ -625,7 +626,7 @@ public class ResultPartitionTest {
         BufferWritingResultPartition bufferWritingResultPartition =
                 createResultPartition(ResultPartitionType.PIPELINED_BOUNDED);
 
-        bufferWritingResultPartition.notifyEndOfData();
+        bufferWritingResultPartition.notifyEndOfData(StopMode.DRAIN);
         CompletableFuture<Void> allRecordsProcessedFuture =
                 bufferWritingResultPartition.getAllDataProcessedFuture();
         assertFalse(allRecordsProcessedFuture.isDone());
@@ -634,7 +635,7 @@ public class ResultPartitionTest {
             Buffer nextBuffer = ((PipelinedSubpartition) resultSubpartition).pollBuffer().buffer();
             assertFalse(nextBuffer.isBuffer());
             assertEquals(
-                    EndOfData.INSTANCE,
+                    new EndOfData(StopMode.DRAIN),
                     EventSerializer.fromBuffer(nextBuffer, getClass().getClassLoader()));
         }
 
@@ -820,6 +821,44 @@ public class ResultPartitionTest {
 
         // and: The buffer has initial size because new buffer was less than 0.
         assertEquals(bufferSize, subpartition1.pollBuffer().buffer().getSize());
+    }
+
+    @Test
+    public void testNumBytesProducedCounterForUnicast() throws IOException {
+        testNumBytesProducedCounter(false);
+    }
+
+    @Test
+    public void testNumBytesProducedCounterForBroadcast() throws IOException {
+        testNumBytesProducedCounter(true);
+    }
+
+    private void testNumBytesProducedCounter(boolean isBroadcast) throws IOException {
+        TestResultPartitionConsumableNotifier notifier =
+                new TestResultPartitionConsumableNotifier();
+        JobID jobId = new JobID();
+        TaskActions taskActions = new NoOpTaskActions();
+        BufferWritingResultPartition bufferWritingResultPartition =
+                createResultPartition(ResultPartitionType.BLOCKING);
+        ResultPartitionWriter partitionWriter =
+                ConsumableNotifyingResultPartitionWriterDecorator.decorate(
+                        Collections.singleton(
+                                PartitionTestUtils.createPartitionDeploymentDescriptor(
+                                        ResultPartitionType.BLOCKING)),
+                        new ResultPartitionWriter[] {bufferWritingResultPartition},
+                        taskActions,
+                        jobId,
+                        notifier)[0];
+
+        if (isBroadcast) {
+            partitionWriter.broadcastRecord(ByteBuffer.allocate(bufferSize));
+            assertEquals(bufferSize, bufferWritingResultPartition.numBytesProduced.getCount());
+            assertEquals(2 * bufferSize, bufferWritingResultPartition.numBytesOut.getCount());
+        } else {
+            partitionWriter.emitRecord(ByteBuffer.allocate(bufferSize), 0);
+            assertEquals(bufferSize, bufferWritingResultPartition.numBytesProduced.getCount());
+            assertEquals(bufferSize, bufferWritingResultPartition.numBytesOut.getCount());
+        }
     }
 
     private static class TestResultPartitionConsumableNotifier

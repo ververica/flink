@@ -30,6 +30,7 @@ import org.apache.flink.runtime.executiongraph.ExecutionVertex;
 import org.apache.flink.runtime.executiongraph.JobStatusListener;
 import org.apache.flink.runtime.jobgraph.JobVertexID;
 import org.apache.flink.runtime.jobgraph.OperatorID;
+import org.apache.flink.runtime.jobgraph.SavepointRestoreSettings;
 import org.apache.flink.runtime.jobgraph.tasks.CheckpointCoordinatorConfiguration;
 import org.apache.flink.runtime.messages.Acknowledge;
 import org.apache.flink.runtime.messages.checkpoint.AcknowledgeCheckpoint;
@@ -42,7 +43,6 @@ import org.apache.flink.runtime.state.CheckpointStorageCoordinatorView;
 import org.apache.flink.runtime.state.CheckpointStorageLocation;
 import org.apache.flink.runtime.state.CompletedCheckpointStorageLocation;
 import org.apache.flink.runtime.state.SharedStateRegistry;
-import org.apache.flink.runtime.state.SharedStateRegistryFactory;
 import org.apache.flink.runtime.state.memory.ByteStreamStateHandle;
 import org.apache.flink.util.ExceptionUtils;
 import org.apache.flink.util.FlinkRuntimeException;
@@ -198,13 +198,7 @@ public class CheckpointCoordinator {
     private volatile boolean shutdown;
 
     /** Optional tracker for checkpoint statistics. */
-    @Nullable private CheckpointStatsTracker statsTracker;
-
-    /** A factory for SharedStateRegistry objects. */
-    private final SharedStateRegistryFactory sharedStateRegistryFactory;
-
-    /** Registry that tracks state which is shared across (incremental) checkpoints. */
-    private SharedStateRegistry sharedStateRegistry;
+    private final CheckpointStatsTracker statsTracker;
 
     /** Id of checkpoint for which in-flight data should be ignored on recovery. */
     private final long checkpointIdOfIgnoredInFlightData;
@@ -238,10 +232,10 @@ public class CheckpointCoordinator {
             Executor executor,
             CheckpointsCleaner checkpointsCleaner,
             ScheduledExecutor timer,
-            SharedStateRegistryFactory sharedStateRegistryFactory,
             CheckpointFailureManager failureManager,
             CheckpointPlanCalculator checkpointPlanCalculator,
-            ExecutionAttemptMappingProvider attemptMappingProvider) {
+            ExecutionAttemptMappingProvider attemptMappingProvider,
+            CheckpointStatsTracker statsTracker) {
 
         this(
                 job,
@@ -253,11 +247,11 @@ public class CheckpointCoordinator {
                 executor,
                 checkpointsCleaner,
                 timer,
-                sharedStateRegistryFactory,
                 failureManager,
                 checkpointPlanCalculator,
                 attemptMappingProvider,
-                SystemClock.getInstance());
+                SystemClock.getInstance(),
+                statsTracker);
     }
 
     @VisibleForTesting
@@ -271,11 +265,11 @@ public class CheckpointCoordinator {
             Executor executor,
             CheckpointsCleaner checkpointsCleaner,
             ScheduledExecutor timer,
-            SharedStateRegistryFactory sharedStateRegistryFactory,
             CheckpointFailureManager failureManager,
             CheckpointPlanCalculator checkpointPlanCalculator,
             ExecutionAttemptMappingProvider attemptMappingProvider,
-            Clock clock) {
+            Clock clock,
+            CheckpointStatsTracker statsTracker) {
 
         // sanity checks
         checkNotNull(checkpointStorage);
@@ -304,8 +298,6 @@ public class CheckpointCoordinator {
         this.completedCheckpointStore = checkNotNull(completedCheckpointStore);
         this.executor = checkNotNull(executor);
         this.checkpointsCleaner = checkNotNull(checkpointsCleaner);
-        this.sharedStateRegistryFactory = checkNotNull(sharedStateRegistryFactory);
-        this.sharedStateRegistry = sharedStateRegistryFactory.create(executor);
         this.failureManager = checkNotNull(failureManager);
         this.checkpointPlanCalculator = checkNotNull(checkpointPlanCalculator);
         this.attemptMappingProvider = checkNotNull(attemptMappingProvider);
@@ -351,6 +343,7 @@ public class CheckpointCoordinator {
                         this.minPauseBetweenCheckpoints,
                         this.pendingCheckpoints::size,
                         this.checkpointsCleaner::getNumberOfCheckpointsToClean);
+        this.statsTracker = checkNotNull(statsTracker, "Statistic tracker can not be null");
     }
 
     // --------------------------------------------------------------------------------------------
@@ -387,15 +380,6 @@ public class CheckpointCoordinator {
         synchronized (lock) {
             return masterHooks.size();
         }
-    }
-
-    /**
-     * Sets the checkpoint stats tracker.
-     *
-     * @param statsTracker The checkpoint stats tracker.
-     */
-    public void setCheckpointStatsTracker(@Nullable CheckpointStatsTracker statsTracker) {
-        this.statsTracker = statsTracker;
     }
 
     // --------------------------------------------------------------------------------------------
@@ -1221,7 +1205,10 @@ public class CheckpointCoordinator {
 
         // As a first step to complete the checkpoint, we register its state with the registry
         Map<OperatorID, OperatorState> operatorStates = pendingCheckpoint.getOperatorStates();
+        SharedStateRegistry sharedStateRegistry = completedCheckpointStore.getSharedStateRegistry();
         sharedStateRegistry.registerAll(operatorStates.values());
+
+        long lastSubsumedCheckpointId = CheckpointStoreUtil.INVALID_CHECKPOINT_ID;
 
         try {
             try {
@@ -1253,8 +1240,14 @@ public class CheckpointCoordinator {
             Preconditions.checkState(pendingCheckpoint.isDisposed() && completedCheckpoint != null);
 
             try {
-                completedCheckpointStore.addCheckpoint(
-                        completedCheckpoint, checkpointsCleaner, this::scheduleTriggerRequest);
+                CompletedCheckpoint lastSubsumed =
+                        completedCheckpointStore.addCheckpointAndSubsumeOldestOne(
+                                completedCheckpoint,
+                                checkpointsCleaner,
+                                this::scheduleTriggerRequest);
+                if (lastSubsumed != null && lastSubsumed.getProperties().discardOnSubsumed()) {
+                    lastSubsumedCheckpointId = lastSubsumed.getCheckpointID();
+                }
             } catch (Exception exception) {
                 if (exception instanceof PossibleInconsistentStateException) {
                     LOG.warn(
@@ -1315,7 +1308,8 @@ public class CheckpointCoordinator {
         sendAcknowledgeMessages(
                 pendingCheckpoint.getCheckpointPlan().getTasksToCommitTo(),
                 checkpointId,
-                completedCheckpoint.getTimestamp());
+                completedCheckpoint.getTimestamp(),
+                lastSubsumedCheckpointId);
     }
 
     void scheduleTriggerRequest() {
@@ -1329,19 +1323,24 @@ public class CheckpointCoordinator {
         }
     }
 
-    private void sendAcknowledgeMessages(
-            List<ExecutionVertex> tasksToCommit, long checkpointId, long timestamp) {
+    @VisibleForTesting
+    void sendAcknowledgeMessages(
+            List<ExecutionVertex> tasksToCommit,
+            long completedCheckpointId,
+            long completedTimestamp,
+            long lastSubsumedCheckpointId) {
         // commit tasks
         for (ExecutionVertex ev : tasksToCommit) {
             Execution ee = ev.getCurrentExecutionAttempt();
             if (ee != null) {
-                ee.notifyCheckpointComplete(checkpointId, timestamp);
+                ee.notifyCheckpointOnComplete(
+                        completedCheckpointId, completedTimestamp, lastSubsumedCheckpointId);
             }
         }
 
         // commit coordinators
         for (OperatorCoordinatorCheckpointContext coordinatorContext : coordinatorsToCheckpoint) {
-            coordinatorContext.notifyCheckpointComplete(checkpointId);
+            coordinatorContext.notifyCheckpointComplete(completedCheckpointId);
         }
     }
 
@@ -1520,24 +1519,6 @@ public class CheckpointCoordinator {
                 throw new IllegalStateException("CheckpointCoordinator is shut down");
             }
 
-            // We create a new shared state registry object, so that all pending async disposal
-            // requests from previous runs will go against the old object (were they can do no
-            // harm). This must happen under the checkpoint lock.
-            sharedStateRegistry.close();
-            sharedStateRegistry = sharedStateRegistryFactory.create(executor);
-
-            // Now, we re-register all (shared) states from the checkpoint store with the new
-            // registry
-            for (CompletedCheckpoint completedCheckpoint :
-                    completedCheckpointStore.getAllCheckpoints()) {
-                completedCheckpoint.registerSharedStatesAfterRestored(sharedStateRegistry);
-            }
-
-            LOG.debug(
-                    "Status of the shared state registry of job {} after restore: {}.",
-                    job,
-                    sharedStateRegistry);
-
             // Restore from the latest checkpoint
             CompletedCheckpoint latest = completedCheckpointStore.getLatestCheckpoint();
 
@@ -1598,17 +1579,15 @@ public class CheckpointCoordinator {
 
             // update metrics
 
-            if (statsTracker != null) {
-                long restoreTimestamp = System.currentTimeMillis();
-                RestoredCheckpointStats restored =
-                        new RestoredCheckpointStats(
-                                latest.getCheckpointID(),
-                                latest.getProperties(),
-                                restoreTimestamp,
-                                latest.getExternalPointer());
+            long restoreTimestamp = System.currentTimeMillis();
+            RestoredCheckpointStats restored =
+                    new RestoredCheckpointStats(
+                            latest.getCheckpointID(),
+                            latest.getProperties(),
+                            restoreTimestamp,
+                            latest.getExternalPointer());
 
-                statsTracker.reportRestoredCheckpoint(restored);
-            }
+            statsTracker.reportRestoredCheckpoint(restored);
 
             return OptionalLong.of(latest.getCheckpointID());
         }
@@ -1636,21 +1615,21 @@ public class CheckpointCoordinator {
     /**
      * Restore the state with given savepoint.
      *
-     * @param savepointPointer The pointer to the savepoint.
-     * @param allowNonRestored True if allowing checkpoint state that cannot be mapped to any job
-     *     vertex in tasks.
+     * @param restoreSettings Settings for a snapshot to restore from. Includes the path and
+     *     parameters for the restore process.
      * @param tasks Map of job vertices to restore. State for these vertices is restored via {@link
      *     Execution#setInitialState(JobManagerTaskRestore)}.
      * @param userClassLoader The class loader to resolve serialized classes in legacy savepoint
      *     versions.
      */
     public boolean restoreSavepoint(
-            String savepointPointer,
-            boolean allowNonRestored,
+            SavepointRestoreSettings restoreSettings,
             Map<JobVertexID, ExecutionJobVertex> tasks,
             ClassLoader userClassLoader)
             throws Exception {
 
+        final String savepointPointer = restoreSettings.getRestorePath();
+        final boolean allowNonRestored = restoreSettings.allowNonRestoredState();
         Preconditions.checkNotNull(savepointPointer, "The savepoint path cannot be null.");
 
         LOG.info(
@@ -1662,12 +1641,35 @@ public class CheckpointCoordinator {
         final CompletedCheckpointStorageLocation checkpointLocation =
                 checkpointStorageView.resolveCheckpoint(savepointPointer);
 
+        // convert to checkpoint so the system can fall back to it
+        final CheckpointProperties checkpointProperties;
+        switch (restoreSettings.getRestoreMode()) {
+            case CLAIM:
+                checkpointProperties = this.checkpointProperties;
+                break;
+            case LEGACY:
+                checkpointProperties = CheckpointProperties.forSavepoint(false);
+                break;
+            default:
+                throw new IllegalArgumentException("Unknown snapshot restore mode");
+        }
+
         // Load the savepoint as a checkpoint into the system
         CompletedCheckpoint savepoint =
                 Checkpoints.loadAndValidateCheckpoint(
-                        job, tasks, checkpointLocation, userClassLoader, allowNonRestored);
+                        job,
+                        tasks,
+                        checkpointLocation,
+                        userClassLoader,
+                        allowNonRestored,
+                        checkpointProperties);
 
-        completedCheckpointStore.addCheckpoint(
+        // register shared state - even before adding the checkpoint to the store
+        // because the latter might trigger subsumption so the ref counts must be up-to-date
+        savepoint.registerSharedStatesAfterRestored(
+                completedCheckpointStore.getSharedStateRegistry());
+
+        completedCheckpointStore.addCheckpointAndSubsumeOldestOne(
                 savepoint, checkpointsCleaner, this::scheduleTriggerRequest);
 
         // Reset the checkpoint ID counter
@@ -1881,11 +1883,9 @@ public class CheckpointCoordinator {
 
     public void reportStats(long id, ExecutionAttemptID attemptId, CheckpointMetrics metrics)
             throws CheckpointException {
-        if (statsTracker != null) {
-            attemptMappingProvider
-                    .getVertex(attemptId)
-                    .ifPresent(ev -> statsTracker.reportIncompleteStats(id, ev, metrics));
-        }
+        attemptMappingProvider
+                .getVertex(attemptId)
+                .ifPresent(ev -> statsTracker.reportIncompleteStats(id, ev, metrics));
     }
 
     // ------------------------------------------------------------------------
@@ -2101,9 +2101,6 @@ public class CheckpointCoordinator {
     }
 
     private void trackPendingCheckpointStats(PendingCheckpoint checkpoint) {
-        if (statsTracker == null) {
-            return;
-        }
         Map<JobVertexID, Integer> vertices =
                 Stream.concat(
                                 checkpoint.getCheckpointPlan().getTasksToWaitFor().stream(),
@@ -2139,8 +2136,6 @@ public class CheckpointCoordinator {
 
     @Nullable
     private PendingCheckpointStats getStatsCallback(PendingCheckpoint pendingCheckpoint) {
-        return statsTracker == null
-                ? null
-                : statsTracker.getPendingCheckpointStats(pendingCheckpoint.getCheckpointID());
+        return statsTracker.getPendingCheckpointStats(pendingCheckpoint.getCheckpointID());
     }
 }

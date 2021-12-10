@@ -21,7 +21,6 @@ package org.apache.flink.table.planner.codegen
 import java.lang.reflect.Method
 import java.lang.{Boolean => JBoolean, Byte => JByte, Double => JDouble, Float => JFloat, Integer => JInt, Long => JLong, Object => JObject, Short => JShort}
 import java.util.concurrent.atomic.AtomicLong
-
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.functions.RuntimeContext
 import org.apache.flink.core.memory.MemorySegment
@@ -33,10 +32,10 @@ import org.apache.flink.table.data.util.DataFormatConverters.IdentityConverter
 import org.apache.flink.table.data.utils.JoinedRowData
 import org.apache.flink.table.functions.UserDefinedFunction
 import org.apache.flink.table.planner.codegen.GenerateUtils.{generateInputFieldUnboxing, generateNonNullField}
+import org.apache.flink.table.planner.codegen.calls.BuiltInMethods.BINARY_STRING_DATA_FROM_STRING
 import org.apache.flink.table.runtime.dataview.StateDataViewStore
 import org.apache.flink.table.runtime.generated.{AggsHandleFunction, HashFunction, NamespaceAggsHandleFunction, TableAggsHandleFunction}
 import org.apache.flink.table.runtime.types.LogicalTypeDataTypeConverter.fromDataTypeToLogicalType
-import org.apache.flink.table.runtime.types.PlannerTypeUtils.isInteroperable
 import org.apache.flink.table.runtime.typeutils.TypeCheckUtils
 import org.apache.flink.table.runtime.util.{MurmurHashUtil, TimeWindowUtil}
 import org.apache.flink.table.types.DataType
@@ -46,6 +45,7 @@ import org.apache.flink.table.types.logical.utils.LogicalTypeChecks
 import org.apache.flink.table.types.logical.utils.LogicalTypeChecks.{getFieldCount, getPrecision, getScale}
 import org.apache.flink.table.types.logical.utils.LogicalTypeUtils.toInternalConversionClass
 import org.apache.flink.table.types.utils.DataTypeUtils.isInternal
+import org.apache.flink.table.utils.EncodingUtils
 import org.apache.flink.types.{Row, RowKind}
 
 import scala.annotation.tailrec
@@ -53,6 +53,8 @@ import scala.annotation.tailrec
 object CodeGenUtils {
 
   // ------------------------------- DEFAULT TERMS ------------------------------------------
+
+  val DEFAULT_LEGACY_CAST_BEHAVIOUR = "legacyCastBehaviour"
 
   val DEFAULT_TIMEZONE_TERM = "timeZone"
 
@@ -193,6 +195,28 @@ object CodeGenUtils {
     case DOUBLE => "double"
     case DISTINCT_TYPE => primitiveTypeTermForType(t.asInstanceOf[DistinctType].getSourceType)
     case _ => boxedTypeTermForType(t)
+  }
+
+  /**
+   * Converts values to stringified representation to include in the codegen.
+   *
+   * This method doesn't support complex types.
+   */
+  def primitiveLiteralForType(value: Any): String = value match {
+    // ordered by type root definition
+    case _: JBoolean => value.toString
+    case _: JByte => s"((byte)$value)"
+    case _: JShort => s"((short)$value)"
+    case _: JInt => value.toString
+    case _: JLong => value.toString + "L"
+    case _: JFloat => value.toString + "f"
+    case _: JDouble => value.toString + "d"
+    case sd: StringData =>
+      qualifyMethod(BINARY_STRING_DATA_FROM_STRING) + "(\"" +
+        EncodingUtils.escapeJava(sd.toString) + "\")"
+    case td: TimestampData =>
+      s"$TIMESTAMP_DATA.fromEpochMillis(${td.getMillisecond}L, ${td.getNanoOfMillisecond})"
+    case _ => throw new IllegalArgumentException("Illegal literal type: " + value.getClass)
   }
 
   @tailrec
@@ -679,16 +703,26 @@ object CodeGenUtils {
       fieldValTerm: String,
       writerTerm: String,
       fieldType: LogicalType): String =
-    binaryWriterWriteField(ctx, index.toString, fieldValTerm, writerTerm, fieldType)
+    binaryWriterWriteField(
+      t => ctx.addReusableTypeSerializer(t), index.toString, fieldValTerm, writerTerm, fieldType)
 
-  @tailrec
   def binaryWriterWriteField(
       ctx: CodeGeneratorContext,
       indexTerm: String,
       fieldValTerm: String,
       writerTerm: String,
+      t: LogicalType): String =
+    binaryWriterWriteField(
+      t => ctx.addReusableTypeSerializer(t), indexTerm, fieldValTerm, writerTerm, t)
+
+  @tailrec
+  def binaryWriterWriteField(
+      addSerializer: LogicalType => String,
+      indexTerm: String,
+      fieldValTerm: String,
+      writerTerm: String,
       t: LogicalType)
-    : String = t.getTypeRoot match {
+  : String = t.getTypeRoot match {
     // ordered by type root definition
     case CHAR | VARCHAR =>
       s"$writerTerm.writeString($indexTerm, $fieldValTerm)"
@@ -715,23 +749,23 @@ object CodeGenUtils {
     case TIMESTAMP_WITH_TIME_ZONE =>
       throw new UnsupportedOperationException("Unsupported type: " + t)
     case ARRAY =>
-      val ser = ctx.addReusableTypeSerializer(t)
+      val ser = addSerializer(t)
       s"$writerTerm.writeArray($indexTerm, $fieldValTerm, $ser)"
     case MULTISET | MAP =>
-      val ser = ctx.addReusableTypeSerializer(t)
+      val ser = addSerializer(t)
       s"$writerTerm.writeMap($indexTerm, $fieldValTerm, $ser)"
     case ROW | STRUCTURED_TYPE =>
-      val ser = ctx.addReusableTypeSerializer(t)
+      val ser = addSerializer(t)
       s"$writerTerm.writeRow($indexTerm, $fieldValTerm, $ser)"
     case DISTINCT_TYPE =>
       binaryWriterWriteField(
-        ctx,
+        addSerializer,
         indexTerm,
         fieldValTerm,
         writerTerm,
         t.asInstanceOf[DistinctType].getSourceType)
     case RAW =>
-      val ser = ctx.addReusableTypeSerializer(t)
+      val ser = addSerializer(t)
       s"$writerTerm.writeRawValue($indexTerm, $fieldValTerm, $ser)"
     case NULL | SYMBOL | UNRESOLVED =>
       throw new IllegalArgumentException("Illegal type: " + t);

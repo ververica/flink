@@ -692,7 +692,7 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
             try {
                 changelogStorage =
                         changelogStoragesManager.stateChangelogStorageForJob(
-                                jobId, taskManagerConfiguration.getConfiguration());
+                                jobId, taskManagerConfiguration.getConfiguration(), jobGroup);
             } catch (IOException e) {
                 throw new TaskSubmissionException(e);
             }
@@ -981,18 +981,23 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
 
     @Override
     public CompletableFuture<Acknowledge> confirmCheckpoint(
-            ExecutionAttemptID executionAttemptID, long checkpointId, long checkpointTimestamp) {
+            ExecutionAttemptID executionAttemptID,
+            long completedCheckpointId,
+            long completedCheckpointTimestamp,
+            long lastSubsumedCheckpointId) {
         log.debug(
-                "Confirm checkpoint {}@{} for {}.",
-                checkpointId,
-                checkpointTimestamp,
+                "Confirm completed checkpoint {}@{} and last subsumed checkpoint {} for {}.",
+                completedCheckpointId,
+                completedCheckpointTimestamp,
+                lastSubsumedCheckpointId,
                 executionAttemptID);
 
         final Task task = taskSlotTable.getTask(executionAttemptID);
 
         if (task != null) {
-            task.notifyCheckpointComplete(checkpointId);
+            task.notifyCheckpointComplete(completedCheckpointId);
 
+            task.notifyCheckpointSubsumed(lastSubsumedCheckpointId);
             return CompletableFuture.completedFuture(Acknowledge.get());
         } else {
             final String message =
@@ -1526,7 +1531,7 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
                 //   This can happen when the resource requirements of a job increases between
                 //   offers.
                 //   In this case the first response MUST be ignored, so that
-                //   the the slot can be properly activated when the second response arrives.
+                //   the slot can be properly activated when the second response arrives.
                 // 2) initially accepted, later rejected
                 //   This can happen when the resource requirements of a job decrease between
                 //   offers.
