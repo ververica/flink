@@ -32,7 +32,7 @@ under the License.
 	<packaging>jar</packaging>
 
 	<properties>
-		<kubernetes.client.version>5.5.0</kubernetes.client.version>
+		<kubernetes.client.version>6.0.0</kubernetes.client.version>
 	</properties>
 
 	<dependencies>
