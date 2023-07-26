@@ -157,7 +157,7 @@ under the License.
 			Hive 2.3.4 relies on Hadoop 2.7.2 and later versions.
 			For Hadoop 2.7, the minor Hadoop version supported for flink-shaded-hadoop-2-uber is 2.7.5
 		-->
-		<hivemetastore.hadoop.version>2.7.5</hivemetastore.hadoop.version>
+		<hivemetastore.hadoop.version>3.0.0</hivemetastore.hadoop.version>
 		<japicmp.referenceVersion>1.14.0</japicmp.referenceVersion>
 		<japicmp.outputDir>tools/japicmp-output</japicmp.outputDir>
 		<spotless.version>2.4.2</spotless.version>
@@ -1145,8 +1145,7 @@ under the License.
 									<stylesheet>plain.xsl</stylesheet>
 
 									<fileMappers>
-										<fileMapper
-											implementation="org.codehaus.plexus.components.io.filemappers.FileExtensionMapper">
+										<fileMapper implementation="org.codehaus.plexus.components.io.filemappers.FileExtensionMapper">
 											<targetExtension>.html</targetExtension>
 										</fileMapper>
 									</fileMappers>
@@ -1363,7 +1362,7 @@ under the License.
 						<license implementation="org.apache.rat.analysis.license.SimplePatternBasedLicense">
 							<licenseFamilyCategory>AL2 </licenseFamilyCategory>
 							<licenseFamilyName>Apache License 2.0</licenseFamilyName>
-							<notes />
+							<notes/>
 							<patterns>
 								<pattern>Licensed to the Apache Software Foundation (ASF) under one</pattern>
 							</patterns>
@@ -1901,7 +1900,7 @@ under the License.
 								<order>org.apache.flink,org.apache.flink.shaded,,javax,java,scala,\#</order>
 							</importOrder>
 
-							<removeUnusedImports />
+							<removeUnusedImports/>
 						</java>
 					</configuration>
 					<executions>
