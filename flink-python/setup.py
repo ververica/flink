@@ -310,7 +310,7 @@ try:
         python_requires='>=3.6',
         install_requires=['py4j==0.10.8.1', 'python-dateutil==2.8.0', 'apache-beam==2.27.0',
                           'cloudpickle==1.2.2', 'avro-python3>=1.8.1,!=1.9.2,<1.10.0',
-                          'pandas>=1.0,<1.2.0', 'pyarrow>=0.15.1,<3.0.0',
+                          'pandas>=1.0,<1.2.0', 'pyarrow>=14.0.1,<17.0.0',
                           'pytz>=2018.3', 'numpy>=1.14.3,<1.20', 'fastavro>=0.21.4,<0.24',
                           'requests>=2.26.0', 'protobuf<3.18',
                           apache_flink_libraries_dependency],
